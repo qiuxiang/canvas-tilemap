@@ -1,6 +1,6 @@
 import { FullGestureState, Gesture as UseGesture } from "@use-gesture/vanilla";
 import { inertia } from "popmotion";
-import { CanvasTilemap } from ".";
+import { Tilemap } from ".";
 
 export class Average {
   count = 0;
@@ -28,7 +28,7 @@ export class Average {
 }
 
 export class Gesture {
-  map: CanvasTilemap;
+  map: Tilemap;
 
   initialScale = 0;
   lastPinchTime = 0;
@@ -42,10 +42,11 @@ export class Gesture {
   velocityY = new Average();
   velocityScale = new Average();
 
-  constructor(map: CanvasTilemap) {
+  constructor(map: Tilemap) {
     this.map = map;
     new UseGesture(this.map.element, {
       onWheel: this.onWheel.bind(this),
+      onPinchStart: () => this.initialScale = this.map.scale,
       onPinch: this.onPinch.bind(this),
       onPinchEnd: this.onPinchEnd.bind(this),
       onDragStart: this.onDragStart.bind(this),

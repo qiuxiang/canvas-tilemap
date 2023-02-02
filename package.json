@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "build": "esbuild src/index.ts --bundle --outfile=dist/bundle.js"
+    "build": "esbuild example/index.ts --bundle --outfile=dist/bundle.js"
   },
   "dependencies": {
     "@use-gesture/vanilla": "^10.2.24",

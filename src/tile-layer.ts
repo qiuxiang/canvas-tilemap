@@ -1,4 +1,4 @@
-import { CanvasTilemap } from ".";
+import { Tilemap } from ".";
 
 export interface TileLayerOptions {
   minZoom: number;
@@ -6,18 +6,18 @@ export interface TileLayerOptions {
   getTileUrl: (x: number, y: number, z: number) => string;
 
   /**
-   * tile offset, default [0, 0]
+   * tile offset, default: [0, 0]
    */
   offset?: [number, number];
 }
 
 export class TileLayer {
-  map: CanvasTilemap;
+  map: Tilemap;
   options: TileLayerOptions;
   tiles: Record<number, string[][]> = {};
   images: Record<string, HTMLImageElement> = {};
 
-  constructor(map: CanvasTilemap, options: TileLayerOptions) {
+  constructor(map: Tilemap, options: TileLayerOptions) {
     this.map = map;
     this.options = {
       ...options,
@@ -48,9 +48,9 @@ export class TileLayer {
         const image = new Image();
         image.src = url;
         image.addEventListener("load", () => {
+          this.images[url] = image;
           this.map.draw();
         });
-        this.images[url] = image;
       }
     }
   }
@@ -91,7 +91,9 @@ export class TileLayer {
         } else {
           const image = new Image();
           image.src = url;
-          this.images[url] = image;
+          image.addEventListener('load', () => {
+            this.images[url] = image;
+          });
         }
       }
     }
