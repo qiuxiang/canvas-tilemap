@@ -1,0 +1,12 @@
+{
+  "scripts": {
+    "build": "esbuild src/index.ts --bundle --outfile=dist/bundle.js"
+  },
+  "dependencies": {
+    "@use-gesture/vanilla": "^10.2.24",
+    "popmotion": "^11.0.5"
+  },
+  "devDependencies": {
+    "esbuild": "^0.17.5"
+  }
+}
