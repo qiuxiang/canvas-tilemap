@@ -1,4 +1,4 @@
-import { Tilemap, TileLayer } from "../src";
+import { Tilemap, TileLayer, MarkerLayer } from "../src";
 
 let accessToken = "";
 
@@ -43,8 +43,46 @@ async function main() {
   );
 
   await fetchAccessToken();
-  const data = await api("marker/get/list_byinfo", { itemIdList: [122] });
-  console.log(data);
+  const { record } = await api("icon/get/list", { size: 1000 });
+  const iconSize = 32;
+  const icons: Record<string, string> = {};
+  for (const i of record) {
+    icons[i.name] = i.url;
+  }
+  addMarker(122);
+  addMarker(126);
+  addMarker(1241);
+
+  async function addMarker(id: number) {
+    const markers = await api("marker/get/list_byinfo", { itemIdList: [id] });
+    tilemap.markerLayers.push(
+      new MarkerLayer(tilemap, {
+        positions: markers.map((i: any) =>
+          i.position.split(",").map((i: string) => parseInt(i))
+        ),
+        image: createMarkerImage(icons[markers[0].itemList[0].iconTag]),
+        offset: [-5120, 0],
+      })
+    );
+  }
+
+  function createMarkerImage(url: string) {
+    const canvas = document.createElement("canvas");
+    const canvas2d = canvas.getContext("2d")!;
+    const image = new Image();
+    image.src = url;
+    image.addEventListener("load", () => {
+      canvas.width = iconSize;
+      canvas.height = iconSize;
+      const radius = iconSize / 2;
+      canvas2d.arc(radius, radius, radius, 0, 2 * Math.PI);
+      canvas2d.fillStyle = "rgba(255, 255, 255, 0.5)";
+      canvas2d.fill();
+      canvas2d.drawImage(image, 0, 0, iconSize, iconSize);
+      tilemap.draw();
+    });
+    return canvas;
+  }
 }
 
 main();
