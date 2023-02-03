@@ -1,5 +1,5 @@
 {
-  "name": "canvas-tilemap",
+  "name": "@7c00/canvas-tilemap",
   "description": "smooth tilemap uses canvas render",
   "keywords": ["canvas", "tilemap", "maps"],
   "main": "src",
