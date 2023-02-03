@@ -29,9 +29,14 @@ async function main() {
     size: [17408, 16384],
     origin: [3568, 6286],
     maxZoom: 0.5,
+
+    // 渊下宫
+    // size: [12288, 12288],
+    // origin: [3568, 6286],
   });
 
   tilemap.tileLayers.push(
+    // 提瓦特大陆
     new TileLayer(tilemap, {
       minZoom: 10,
       maxZoom: 13,
@@ -39,7 +44,17 @@ async function main() {
       getTileUrl(x, y, z) {
         return `https://assets.yuanshen.site/tiles_twt34/${z}/${x}_${y}.png`;
       },
+      dx: 1024,
     })
+
+    // 渊下宫
+    // new TileLayer(tilemap, {
+    //   minZoom: 10,
+    //   maxZoom: 13,
+    //   getTileUrl(x, y, z) {
+    //     return `https://assets.yuanshen.site/tiles_yxg2/${z}/${x}_${y}.png`;
+    //   },
+    // })
   );
 
   await fetchAccessToken();
@@ -49,9 +64,14 @@ async function main() {
   for (const i of record) {
     icons[i.name] = i.url;
   }
-  addMarker(122);
-  addMarker(126);
-  addMarker(1241);
+
+  await addMarker(126);
+  await addMarker(1242);
+  await addMarker(1561);
+  await addMarker(97);
+  // 渊下宫点位
+  // await addMarker(660);
+  // await addMarker(627);
 
   async function addMarker(id: number) {
     const markers = await api("marker/get/list_byinfo", { itemIdList: [id] });
@@ -78,7 +98,20 @@ async function main() {
       canvas2d.arc(radius, radius, radius, 0, 2 * Math.PI);
       canvas2d.fillStyle = "rgba(255, 255, 255, 0.5)";
       canvas2d.fill();
-      canvas2d.drawImage(image, 0, 0, iconSize, iconSize);
+      // 图片都是正方形的情况下 `canvas2d.drawImage(image, 0, 0, iconSize, iconSize)` 就可以了
+      let size = [image.width, image.height];
+      if (image.width > image.height) {
+        size = [iconSize, (size[1] * iconSize) / size[0]];
+      } else {
+        size = [(size[0] * iconSize) / size[1], iconSize];
+      }
+      canvas2d.drawImage(
+        image,
+        (iconSize - size[0]) / 2,
+        (iconSize - size[1]) / 2,
+        size[0],
+        size[1]
+      );
       tilemap.draw();
     });
     return canvas;

@@ -9,6 +9,11 @@ export interface TileLayerOptions {
    * tile offset, default: [0, 0]
    */
   offset?: [number, number];
+
+  /**
+   * hack 用，修正一个偏移，之后会移除
+   */
+  dx?: number;
 }
 
 export class TileLayer {
@@ -24,7 +29,7 @@ export class TileLayer {
       offset: options.offset ?? [0, 0],
     };
     const { size: mapSize } = map.options;
-    const { minZoom, maxZoom, offset: tileOffset } = options;
+    const { minZoom, maxZoom, offset: tileOffset } = this.options;
     for (let z = minZoom; z <= maxZoom; z += 1) {
       const imageSize = map.options.tileSize! * 2 ** (maxZoom - z);
       const row = Math.ceil(mapSize[1] / imageSize);
@@ -56,8 +61,8 @@ export class TileLayer {
   }
 
   draw() {
-    const { minZoom, maxZoom } = this.options;
-    this.drawTiles(minZoom, -1024 * this.map.scale);
+    const { minZoom, maxZoom, dx = 0 } = this.options;
+    this.drawTiles(minZoom, dx * this.map.scale);
 
     let zoom = maxZoom + Math.log2(this.map.scale);
     zoom = Math.ceil(Math.min(Math.max(zoom, minZoom), maxZoom));
@@ -72,7 +77,7 @@ export class TileLayer {
     const imageSize =
       options.tileSize! * 2 ** (this.options.maxZoom - z) * scale;
     const startX = Math.floor(-offset[0] / imageSize);
-    const endX = Math.ceil((size[0] - offset[0] - dx) / imageSize);
+    const endX = Math.ceil((size[0] - offset[0] + dx) / imageSize);
     const startY = Math.floor(-offset[1] / imageSize);
     const endY = Math.ceil((size[1] - offset[1]) / imageSize);
 
@@ -83,7 +88,7 @@ export class TileLayer {
         if (image) {
           this.map.canvas.drawImage(
             image,
-            imageSize * x + dx,
+            imageSize * x - dx,
             imageSize * y,
             imageSize,
             imageSize
@@ -91,7 +96,7 @@ export class TileLayer {
         } else {
           const image = new Image();
           image.src = url;
-          image.addEventListener('load', () => {
+          image.addEventListener("load", () => {
             this.images[url] = image;
           });
         }

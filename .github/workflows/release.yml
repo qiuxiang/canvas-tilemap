@@ -1,0 +1,22 @@
+name: release
+on:
+  release:
+    types: [published]
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: npm i --legacy-peer-deps
+      - run: npm run build
+      - uses: bruceadams/get-release@v1.2.3
+        id: release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      - uses: actions/setup-node@v3
+        with:
+          registry-url: "https://registry.npmjs.org"
+      - run: npm version ${{ steps.release.outputs.tag_name }} --no-git-tag-version
+      - run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
