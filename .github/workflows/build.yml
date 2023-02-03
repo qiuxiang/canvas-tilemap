@@ -1,0 +1,13 @@
+name: release
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: npm i
+      - run: npm run build
+      - run: cp example/index.html dist/
+      - uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: dist

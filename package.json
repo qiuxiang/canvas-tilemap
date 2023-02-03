@@ -10,7 +10,7 @@
     "url": "https://github.com/qiuxiang/canvas-tilemap.git"
   },
   "scripts": {
-    "build": "esbuild example/index.ts --bundle --outfile=dist/bundle.js"
+    "build": "esbuild example/index.ts --bundle --outdir=dist"
   },
   "dependencies": {
     "@use-gesture/vanilla": "^10.2.24",

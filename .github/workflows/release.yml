@@ -8,8 +8,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - run: npm i --legacy-peer-deps
-      - run: npm run build
-      - uses: bruceadams/get-release@v1.2.3
+      - uses: bruceadams/get-release@v1.3.2
         id: release
         env:
           GITHUB_TOKEN: ${{ github.token }}
