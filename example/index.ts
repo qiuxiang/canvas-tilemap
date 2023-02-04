@@ -58,7 +58,7 @@ async function main() {
 
   await fetchAccessToken();
   const { record } = await api("icon/get/list", { size: 1000 });
-  const iconSize = 32;
+  const iconSize = 32 * devicePixelRatio;
   const icons: Record<string, string> = {};
   for (const i of record) {
     icons[i.name] = i.url;
@@ -97,20 +97,20 @@ async function main() {
       canvas2d.arc(radius, radius, radius, 0, 2 * Math.PI);
       canvas2d.fillStyle = "rgba(255, 255, 255, 0.5)";
       canvas2d.fill();
-      // 图片都是正方形的情况下 `canvas2d.drawImage(image, 0, 0, iconSize, iconSize)` 就可以了
-      let size = [image.width, image.height];
+
+      // 图片正方形的情况下 `canvas2d.drawImage(image, 0, 0, iconSize, iconSize)` 就可以了
+      let size = [
+        image.width * devicePixelRatio,
+        image.height * devicePixelRatio,
+      ];
       if (image.width > image.height) {
         size = [iconSize, (size[1] * iconSize) / size[0]];
       } else {
         size = [(size[0] * iconSize) / size[1], iconSize];
       }
-      canvas2d.drawImage(
-        image,
-        (iconSize - size[0]) / 2,
-        (iconSize - size[1]) / 2,
-        size[0],
-        size[1]
-      );
+      const x = (iconSize - size[0]) / 2;
+      const y = (iconSize - size[1]) / 2;
+      canvas2d.drawImage(image, x, y, size[0], size[1]);
       tilemap.draw();
     });
     return canvas;

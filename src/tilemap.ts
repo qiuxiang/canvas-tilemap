@@ -66,9 +66,9 @@ export class Tilemap {
   }
 
   resize(width: number, height: number) {
-    this.element.width = width;
-    this.element.height = height;
-    this.size = [width / devicePixelRatio, height / devicePixelRatio];
+    this.element.width = width * devicePixelRatio;
+    this.element.height = height * devicePixelRatio;
+    this.size = [width, height];
     const minScale = Math.max(
       this.size[0] / this.options.size[0],
       this.size[1] / this.options.size[1]

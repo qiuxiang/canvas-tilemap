@@ -1,4 +1,5 @@
 import { Tilemap } from ".";
+import { safeCeil } from "./utils";
 
 export interface TileLayerOptions {
   minZoom: number;
@@ -32,8 +33,8 @@ export class TileLayer {
     const { minZoom, maxZoom, offset: tileOffset } = this.options;
     for (let z = minZoom; z <= maxZoom; z += 1) {
       const imageSize = map.options.tileSize! * 2 ** (maxZoom - z);
-      const row = Math.ceil(mapSize[1] / imageSize);
-      const col = Math.ceil(mapSize[0] / imageSize);
+      const row = safeCeil(mapSize[1] / imageSize);
+      const col = safeCeil(mapSize[0] / imageSize);
       const offset = [
         Math.floor(tileOffset![0] / imageSize),
         Math.floor(tileOffset![1] / imageSize),
@@ -65,7 +66,7 @@ export class TileLayer {
     this.drawTiles(minZoom, dx * this.map.scale);
 
     let zoom = maxZoom + Math.log2(this.map.scale);
-    zoom = Math.ceil(Math.min(Math.max(zoom, minZoom), maxZoom));
+    zoom = safeCeil(Math.min(Math.max(zoom, minZoom), maxZoom));
     if (zoom > minZoom) {
       this.drawTiles(zoom);
     }
@@ -77,9 +78,9 @@ export class TileLayer {
     const imageSize =
       options.tileSize! * 2 ** (this.options.maxZoom - z) * scale;
     const startX = Math.floor(-offset[0] / imageSize);
-    const endX = Math.ceil((size[0] - offset[0] + dx) / imageSize);
+    const endX = safeCeil((size[0] - offset[0] + dx) / imageSize);
     const startY = Math.floor(-offset[1] / imageSize);
-    const endY = Math.ceil((size[1] - offset[1]) / imageSize);
+    const endY = safeCeil((size[1] - offset[1]) / imageSize);
 
     for (let y = startY; y < endY; y += 1) {
       for (let x = startX; x < endX; x += 1) {
