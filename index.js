@@ -3023,7 +3023,7 @@ Please add \`${key}Action\` when creating your handler.`);
     velocityScale = new Average();
     constructor(map) {
       this.map = map;
-      new Gesture(this.map.element, {
+      new Gesture(this.map.canvas, {
         onWheel: this.onWheel.bind(this),
         onPinchStart: () => this.initialScale = this.map.scale,
         onPinch: this.onPinch.bind(this),
@@ -3144,13 +3144,16 @@ Please add \`${key}Action\` when creating your handler.`);
   };
 
   // src/tilemap.ts
+  var Layer = class {
+  };
   var Tilemap = class {
     element;
+    canvas;
     options;
     offset = [0, 0];
     scale = 0;
     minZoom = 0;
-    canvas;
+    render;
     size = [0, 0];
     tileLayers = /* @__PURE__ */ new Set();
     markerLayers = /* @__PURE__ */ new Set();
@@ -3167,17 +3170,59 @@ Please add \`${key}Action\` when creating your handler.`);
       } else {
         this.element = options.element;
       }
-      this.canvas = this.element.getContext("2d");
+      this.canvas = document.createElement("canvas");
+      this.canvas.style.touchAction = "none";
+      this.element.appendChild(this.canvas);
+      this.render = this.canvas.getContext("2d");
       this.gesture = new Gesture3(this);
       const resizeObserver = new ResizeObserver(([entry]) => {
         const { width, height } = entry.contentRect;
         setTimeout(() => this.resize(width, height), 0);
       });
       resizeObserver.observe(this.element);
+      this.element.addEventListener("click", ({ clientX, clientY }) => {
+        const result = this.findMarker([clientX, clientY]);
+        if (result) {
+          result?.[0].options.onClick?.(result[1]);
+          this.options.onClick?.({ target: result[0], index: result[1] });
+          return;
+        }
+        this.options.onClick?.();
+      });
+      this.element.addEventListener("mousemove", ({ clientX, clientY }) => {
+        const result = this.findMarker([clientX, clientY]);
+        if (result) {
+          result?.[0].options.onMouseMove?.(result[1]);
+          this.options.onMouseMove?.({ target: result[0], index: result[1] });
+          return;
+        }
+        this.options.onMouseMove?.();
+      });
+    }
+    findMarker(point) {
+      const { scale: scale2, offset } = this;
+      const { origin } = this.options;
+      const markerLayers = Array.from(this.markerLayers).reverse();
+      for (const marker of markerLayers) {
+        const { image, positions, offset: markerOffset } = marker.options;
+        const size = [image.width, image.height];
+        size[0] /= devicePixelRatio;
+        size[1] /= devicePixelRatio;
+        for (let index = positions.length - 1; index >= 0; index -= 1) {
+          let [x, y] = positions[index];
+          x = (x + origin[0] - markerOffset[0]) * scale2 + offset[0];
+          y = (y + origin[1] - markerOffset[1]) * scale2 + offset[1];
+          if (point[0] > x - size[0] / 2 && point[0] < x + size[0] / 2 && point[1] > y - size[1] && point[1] < y) {
+            return [marker, index];
+          }
+        }
+      }
     }
     resize(width, height) {
-      this.element.width = width * devicePixelRatio;
-      this.element.height = height * devicePixelRatio;
+      this.canvas.width = width * devicePixelRatio;
+      this.canvas.height = height * devicePixelRatio;
+      this.canvas.style.width = `${width}px`;
+      this.canvas.style.height = `${height}px`;
       this.size = [width, height];
       const minScale = Math.max(
         this.size[0] / this.options.size[0],
@@ -3197,7 +3242,7 @@ Please add \`${key}Action\` when creating your handler.`);
       const now = Date.now();
       if (now != this.lastDrawTime) {
         requestAnimationFrame(() => {
-          const { canvas, element, offset } = this;
+          const { render: canvas, canvas: element, offset } = this;
           canvas.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
           canvas.clearRect(0, 0, element.width, element.height);
           canvas.translate(offset[0], offset[1]);
@@ -3219,12 +3264,13 @@ Please add \`${key}Action\` when creating your handler.`);
   }
 
   // src/tile-layer.ts
-  var TileLayer = class {
+  var TileLayer = class extends Layer {
     map;
     options;
     tiles = {};
     images = {};
     constructor(map, options) {
+      super();
       this.map = map;
       this.options = {
         ...options,
@@ -3283,7 +3329,7 @@ Please add \`${key}Action\` when creating your handler.`);
           const url = baseTiles[y][x];
           const image = this.images[baseTiles[y][x]];
           if (image) {
-            this.map.canvas.drawImage(
+            this.map.render.drawImage(
               image,
               imageSize * x - dx,
               imageSize * y,
@@ -3303,16 +3349,17 @@ Please add \`${key}Action\` when creating your handler.`);
   };
 
   // src/marker-layer.ts
-  var MarkerLayer = class {
+  var MarkerLayer = class extends Layer {
     map;
     options;
     constructor(map, options) {
+      super();
       this.map = map;
       this.options = { ...options, offset: options.offset ?? [0, 0] };
     }
     draw() {
       const { offset, positions, image } = this.options;
-      const { canvas, scale: scale2, options } = this.map;
+      const { render: canvas, scale: scale2, options } = this.map;
       const size = [image.width, image.height];
       size[0] /= devicePixelRatio;
       size[1] /= devicePixelRatio;
@@ -3352,8 +3399,9 @@ Please add \`${key}Action\` when creating your handler.`);
     accessToken = (await response.json())["access_token"];
   }
   async function main() {
+    const tileOffset = [-5120, 0];
     const tilemap = new Tilemap({
-      element: "#canvas",
+      element: "#tilemap",
       size: [17408, 16384],
       origin: [3568, 6286],
       maxZoom: 0.5
@@ -3365,7 +3413,7 @@ Please add \`${key}Action\` when creating your handler.`);
       new TileLayer(tilemap, {
         minZoom: 10,
         maxZoom: 13,
-        offset: [-5120, 0],
+        offset: tileOffset,
         getTileUrl(x, y, z) {
           return `https://assets.yuanshen.site/tiles_twt34/${z}/${x}_${y}.png`;
         },
@@ -3388,9 +3436,46 @@ Please add \`${key}Action\` when creating your handler.`);
       icons[i.name] = i.url;
     }
     await addMarker(126);
-    await addMarker(1242);
-    await addMarker(1561);
-    await addMarker(97);
+    await addMarker(159);
+    const activeMarkerLayer = new MarkerLayer(tilemap, {
+      positions: [],
+      image: new Image(),
+      offset: tileOffset
+    });
+    tilemap.options.onClick = (event) => {
+      if (event) {
+        const { target, index } = event;
+        if (target == activeMarkerLayer)
+          return;
+        const { image, positions } = target.options;
+        tilemap.markerLayers.add(activeMarkerLayer);
+        activeMarkerLayer.options.positions[0] = positions[index];
+        activeMarkerLayer.options.image = createActiveMarkerImage(
+          image
+        );
+        tilemap.draw();
+      } else if (tilemap.markerLayers.has(activeMarkerLayer)) {
+        tilemap.markerLayers.delete(activeMarkerLayer);
+        tilemap.draw();
+      }
+    };
+    function activateMarker(event) {
+      if (event) {
+        const { target, index } = event;
+        if (target == activeMarkerLayer)
+          return;
+        const { image, positions } = target.options;
+        tilemap.markerLayers.add(activeMarkerLayer);
+        activeMarkerLayer.options.positions[0] = positions[index];
+        activeMarkerLayer.options.image = createActiveMarkerImage(
+          image
+        );
+        tilemap.draw();
+      } else if (tilemap.markerLayers.has(activeMarkerLayer)) {
+        tilemap.markerLayers.delete(activeMarkerLayer);
+        tilemap.draw();
+      }
+    }
     async function addMarker(id) {
       const markers = await api("marker/get/list_byinfo", { itemIdList: [id] });
       tilemap.markerLayers.add(
@@ -3399,9 +3484,17 @@ Please add \`${key}Action\` when creating your handler.`);
             (i) => i.position.split(",").map((i2) => parseInt(i2))
           ),
           image: createMarkerImage(icons[markers[0].itemList[0].iconTag]),
-          offset: [-5120, 0]
+          offset: tileOffset
         })
       );
+    }
+    function createActiveMarkerImage(image) {
+      const canvas = document.createElement("canvas");
+      const canvas2d = canvas.getContext("2d");
+      canvas.width = image.width;
+      canvas.height = image.height;
+      canvas2d.drawImage(image, 0, 0);
+      return canvas;
     }
     function createMarkerImage(url) {
       const canvas = document.createElement("canvas");
