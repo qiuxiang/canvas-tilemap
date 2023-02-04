@@ -44,7 +44,7 @@ export class Gesture {
 
   constructor(map: Tilemap) {
     this.map = map;
-    new UseGesture(this.map.element, {
+    new UseGesture(this.map.canvas, {
       onWheel: this.onWheel.bind(this),
       onPinchStart: () => (this.initialScale = this.map.scale),
       onPinch: this.onPinch.bind(this),

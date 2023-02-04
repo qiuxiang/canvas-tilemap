@@ -1,4 +1,4 @@
-import { Tilemap } from ".";
+import { Layer, Tilemap } from ".";
 import { safeCeil } from "./utils";
 
 export interface TileLayerOptions {
@@ -17,13 +17,14 @@ export interface TileLayerOptions {
   dx?: number;
 }
 
-export class TileLayer {
+export class TileLayer extends Layer {
   map: Tilemap;
   options: TileLayerOptions;
   tiles: Record<number, string[][]> = {};
   images: Record<string, HTMLImageElement> = {};
 
   constructor(map: Tilemap, options: TileLayerOptions) {
+    super();
     this.map = map;
     this.options = {
       ...options,
@@ -87,7 +88,7 @@ export class TileLayer {
         const url = baseTiles[y][x];
         const image = this.images[baseTiles[y][x]];
         if (image) {
-          this.map.canvas.drawImage(
+          this.map.render.drawImage(
             image,
             imageSize * x - dx,
             imageSize * y,

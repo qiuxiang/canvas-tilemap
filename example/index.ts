@@ -1,4 +1,4 @@
-import { Tilemap, TileLayer, MarkerLayer } from "../src";
+import { Tilemap, TileLayer, MarkerLayer, MarkerEvent } from "../src";
 
 let accessToken = "";
 
@@ -24,8 +24,9 @@ async function fetchAccessToken() {
 }
 
 async function main() {
+  const tileOffset: [number, number] = [-5120, 0];
   const tilemap = new Tilemap({
-    element: "#canvas",
+    element: "#tilemap",
     size: [17408, 16384],
     origin: [3568, 6286],
     maxZoom: 0.5,
@@ -39,7 +40,7 @@ async function main() {
     new TileLayer(tilemap, {
       minZoom: 10,
       maxZoom: 13,
-      offset: [-5120, 0],
+      offset: tileOffset,
       getTileUrl(x, y, z) {
         return `https://assets.yuanshen.site/tiles_twt34/${z}/${x}_${y}.png`;
       },
@@ -64,13 +65,57 @@ async function main() {
     icons[i.name] = i.url;
   }
 
+  // 提瓦特大陆点位
   await addMarker(126);
-  await addMarker(1242);
-  await addMarker(1561);
-  await addMarker(97);
+  // await addMarker(1242);
+  // await addMarker(1561);
+  // await addMarker(97);
+  await addMarker(159);
+
   // 渊下宫点位
   // await addMarker(660);
   // await addMarker(627);
+
+  const activeMarkerLayer = new MarkerLayer(tilemap, {
+    positions: [],
+    image: new Image(),
+    offset: tileOffset,
+  });
+  tilemap.options.onClick = (event) => {
+    if (event) {
+      const { target, index } = event;
+      if (target == activeMarkerLayer) return;
+
+      const { image, positions } = target.options;
+      tilemap.markerLayers.add(activeMarkerLayer);
+      activeMarkerLayer.options.positions[0] = positions[index];
+      activeMarkerLayer.options.image = createActiveMarkerImage(
+        image as HTMLCanvasElement
+      );
+      tilemap.draw();
+    } else if (tilemap.markerLayers.has(activeMarkerLayer)) {
+      tilemap.markerLayers.delete(activeMarkerLayer);
+      tilemap.draw();
+    }
+  };
+
+  function activateMarker(event: MarkerEvent | undefined) {
+    if (event) {
+      const { target, index } = event;
+      if (target == activeMarkerLayer) return;
+
+      const { image, positions } = target.options;
+      tilemap.markerLayers.add(activeMarkerLayer);
+      activeMarkerLayer.options.positions[0] = positions[index];
+      activeMarkerLayer.options.image = createActiveMarkerImage(
+        image as HTMLCanvasElement
+      );
+      tilemap.draw();
+    } else if (tilemap.markerLayers.has(activeMarkerLayer)) {
+      tilemap.markerLayers.delete(activeMarkerLayer);
+      tilemap.draw();
+    }
+  }
 
   async function addMarker(id: number) {
     const markers = await api("marker/get/list_byinfo", { itemIdList: [id] });
@@ -80,9 +125,18 @@ async function main() {
           i.position.split(",").map((i: string) => parseInt(i))
         ),
         image: createMarkerImage(icons[markers[0].itemList[0].iconTag]),
-        offset: [-5120, 0],
+        offset: tileOffset,
       })
     );
+  }
+
+  function createActiveMarkerImage(image: HTMLCanvasElement) {
+    const canvas = document.createElement("canvas")!;
+    const canvas2d = canvas.getContext("2d")!;
+    canvas.width = image.width;
+    canvas.height = image.height;
+    canvas2d.drawImage(image, 0, 0);
+    return canvas;
   }
 
   function createMarkerImage(url: string) {

@@ -1,23 +1,26 @@
-import { Tilemap } from "./tilemap";
+import { Layer, Tilemap } from "./tilemap";
 
 export interface MarkerLayerOptions {
   positions: [number, number][];
   image: CanvasImageSource;
   offset?: [number, number];
+  onClick?: (index: number) => void;
+  onHover?: (index: number) => void;
 }
 
-export class MarkerLayer {
+export class MarkerLayer extends Layer {
   map: Tilemap;
   options: MarkerLayerOptions;
 
   constructor(map: Tilemap, options: MarkerLayerOptions) {
+    super();
     this.map = map;
     this.options = { ...options, offset: options.offset ?? [0, 0] };
   }
 
   draw() {
     const { offset, positions, image } = this.options;
-    const { canvas, scale, options } = this.map;
+    const { render: canvas, scale, options } = this.map;
     const size = [image.width as number, image.height as number];
     size[0] /= devicePixelRatio;
     size[1] /= devicePixelRatio;
