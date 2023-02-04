@@ -3157,11 +3157,13 @@ Please add \`${key}Action\` when creating your handler.`);
     size = [0, 0];
     tileLayers = /* @__PURE__ */ new Set();
     markerLayers = /* @__PURE__ */ new Set();
+    domLayers = /* @__PURE__ */ new Set();
     gesture;
     lastDrawTime = 0;
     constructor(options) {
       this.options = {
         ...options,
+        offset: options.offset ?? [0, 0],
         tileSize: options.tileSize ?? 256,
         maxZoom: options.maxZoom ?? 0
       };
@@ -3201,22 +3203,24 @@ Please add \`${key}Action\` when creating your handler.`);
     }
     findMarker(point) {
       const { scale: scale2, offset } = this;
-      const { origin } = this.options;
+      const { origin, offset: mapOffset } = this.options;
       const markerLayers = Array.from(this.markerLayers).reverse();
       for (const marker of markerLayers) {
-        const { image, positions, offset: markerOffset } = marker.options;
+        const { image, positions } = marker.options;
         const size = [image.width, image.height];
         size[0] /= devicePixelRatio;
         size[1] /= devicePixelRatio;
         for (let index = positions.length - 1; index >= 0; index -= 1) {
           let [x, y] = positions[index];
-          x = (x + origin[0] - markerOffset[0]) * scale2 + offset[0];
-          y = (y + origin[1] - markerOffset[1]) * scale2 + offset[1];
+          x = (x + origin[0] - mapOffset[0]) * scale2 + offset[0];
+          y = (y + origin[1] - mapOffset[1]) * scale2 + offset[1];
           if (point[0] > x - size[0] / 2 && point[0] < x + size[0] / 2 && point[1] > y - size[1] && point[1] < y) {
             return [marker, index];
           }
         }
       }
+    }
+    toViewPosition([x, y]) {
     }
     resize(width, height) {
       this.canvas.width = width * devicePixelRatio;
@@ -3272,19 +3276,16 @@ Please add \`${key}Action\` when creating your handler.`);
     constructor(map, options) {
       super();
       this.map = map;
-      this.options = {
-        ...options,
-        offset: options.offset ?? [0, 0]
-      };
-      const { size: mapSize } = map.options;
-      const { minZoom, maxZoom, offset: tileOffset } = this.options;
+      this.options = options;
+      const { size: mapSize, offset: mapOffset } = map.options;
+      const { minZoom, maxZoom } = this.options;
       for (let z = minZoom; z <= maxZoom; z += 1) {
         const imageSize = map.options.tileSize * 2 ** (maxZoom - z);
         const row = safeCeil(mapSize[1] / imageSize);
         const col = safeCeil(mapSize[0] / imageSize);
         const offset = [
-          Math.floor(tileOffset[0] / imageSize),
-          Math.floor(tileOffset[1] / imageSize)
+          Math.floor(mapOffset[0] / imageSize),
+          Math.floor(mapOffset[1] / imageSize)
         ];
         const tiles = [];
         for (let y = 0; y < row; y += 1) {
@@ -3355,17 +3356,17 @@ Please add \`${key}Action\` when creating your handler.`);
     constructor(map, options) {
       super();
       this.map = map;
-      this.options = { ...options, offset: options.offset ?? [0, 0] };
+      this.options = options;
     }
     draw() {
-      const { offset, positions, image } = this.options;
+      const { positions, image } = this.options;
       const { render: canvas, scale: scale2, options } = this.map;
       const size = [image.width, image.height];
       size[0] /= devicePixelRatio;
       size[1] /= devicePixelRatio;
       for (const i of positions) {
-        const x = options.origin[0] - offset[0] + i[0];
-        const y = options.origin[1] - offset[1] + i[1];
+        const x = options.origin[0] - options.offset[0] + i[0];
+        const y = options.origin[1] - options.offset[1] + i[1];
         canvas.drawImage(
           image,
           x * scale2 - size[0] / 2,
@@ -3399,12 +3400,13 @@ Please add \`${key}Action\` when creating your handler.`);
     accessToken = (await response.json())["access_token"];
   }
   async function main() {
-    const tileOffset = [-5120, 0];
+    const mapOffset = [-5120, 0];
     const tilemap = new Tilemap({
       element: "#tilemap",
       size: [17408, 16384],
       origin: [3568, 6286],
-      maxZoom: 0.5
+      maxZoom: 0.5,
+      offset: mapOffset
       // 渊下宫
       // size: [12288, 12288],
       // origin: [3568, 6286],
@@ -3413,7 +3415,6 @@ Please add \`${key}Action\` when creating your handler.`);
       new TileLayer(tilemap, {
         minZoom: 10,
         maxZoom: 13,
-        offset: tileOffset,
         getTileUrl(x, y, z) {
           return `https://assets.yuanshen.site/tiles_twt34/${z}/${x}_${y}.png`;
         },
@@ -3439,8 +3440,7 @@ Please add \`${key}Action\` when creating your handler.`);
     await addMarker(159);
     const activeMarkerLayer = new MarkerLayer(tilemap, {
       positions: [],
-      image: new Image(),
-      offset: tileOffset
+      image: new Image()
     });
     tilemap.options.onClick = (event) => {
       if (event) {
@@ -3459,23 +3459,6 @@ Please add \`${key}Action\` when creating your handler.`);
         tilemap.draw();
       }
     };
-    function activateMarker(event) {
-      if (event) {
-        const { target, index } = event;
-        if (target == activeMarkerLayer)
-          return;
-        const { image, positions } = target.options;
-        tilemap.markerLayers.add(activeMarkerLayer);
-        activeMarkerLayer.options.positions[0] = positions[index];
-        activeMarkerLayer.options.image = createActiveMarkerImage(
-          image
-        );
-        tilemap.draw();
-      } else if (tilemap.markerLayers.has(activeMarkerLayer)) {
-        tilemap.markerLayers.delete(activeMarkerLayer);
-        tilemap.draw();
-      }
-    }
     async function addMarker(id) {
       const markers = await api("marker/get/list_byinfo", { itemIdList: [id] });
       tilemap.markerLayers.add(
@@ -3483,8 +3466,7 @@ Please add \`${key}Action\` when creating your handler.`);
           positions: markers.map(
             (i) => i.position.split(",").map((i2) => parseInt(i2))
           ),
-          image: createMarkerImage(icons[markers[0].itemList[0].iconTag]),
-          offset: tileOffset
+          image: createMarkerImage(icons[markers[0].itemList[0].iconTag])
         })
       );
     }
