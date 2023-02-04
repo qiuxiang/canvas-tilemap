@@ -33,7 +33,7 @@ export interface TilemapOptions {
   onMouseMove?: (event?: MarkerEvent) => void;
 }
 
-interface MarkerEvent {
+export interface MarkerEvent {
   target: MarkerLayer;
   index: number;
 }

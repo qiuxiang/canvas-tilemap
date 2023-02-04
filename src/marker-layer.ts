@@ -5,7 +5,7 @@ export interface MarkerLayerOptions {
   image: CanvasImageSource;
   offset?: [number, number];
   onClick?: (index: number) => void;
-  onHover?: (index: number) => void;
+  onMouseMove?: (index: number) => void;
 }
 
 export class MarkerLayer extends Layer {
