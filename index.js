@@ -3176,9 +3176,9 @@ Please add \`${key}Action\` when creating your handler.`);
       resizeObserver.observe(this.element);
     }
     resize(width, height) {
-      this.element.width = width;
-      this.element.height = height;
-      this.size = [width / devicePixelRatio, height / devicePixelRatio];
+      this.element.width = width * devicePixelRatio;
+      this.element.height = height * devicePixelRatio;
+      this.size = [width, height];
       const minScale = Math.max(
         this.size[0] / this.options.size[0],
         this.size[1] / this.options.size[1]
@@ -3213,6 +3213,11 @@ Please add \`${key}Action\` when creating your handler.`);
     }
   };
 
+  // src/utils.ts
+  function safeCeil(n) {
+    return Math.ceil(parseFloat(n.toFixed(3)));
+  }
+
   // src/tile-layer.ts
   var TileLayer = class {
     map;
@@ -3229,8 +3234,8 @@ Please add \`${key}Action\` when creating your handler.`);
       const { minZoom, maxZoom, offset: tileOffset } = this.options;
       for (let z = minZoom; z <= maxZoom; z += 1) {
         const imageSize = map.options.tileSize * 2 ** (maxZoom - z);
-        const row = Math.ceil(mapSize[1] / imageSize);
-        const col = Math.ceil(mapSize[0] / imageSize);
+        const row = safeCeil(mapSize[1] / imageSize);
+        const col = safeCeil(mapSize[0] / imageSize);
         const offset = [
           Math.floor(tileOffset[0] / imageSize),
           Math.floor(tileOffset[1] / imageSize)
@@ -3260,7 +3265,7 @@ Please add \`${key}Action\` when creating your handler.`);
       const { minZoom, maxZoom, dx = 0 } = this.options;
       this.drawTiles(minZoom, dx * this.map.scale);
       let zoom = maxZoom + Math.log2(this.map.scale);
-      zoom = Math.ceil(Math.min(Math.max(zoom, minZoom), maxZoom));
+      zoom = safeCeil(Math.min(Math.max(zoom, minZoom), maxZoom));
       if (zoom > minZoom) {
         this.drawTiles(zoom);
       }
@@ -3270,9 +3275,9 @@ Please add \`${key}Action\` when creating your handler.`);
       const { scale: scale2, options, offset, size } = this.map;
       const imageSize = options.tileSize * 2 ** (this.options.maxZoom - z) * scale2;
       const startX = Math.floor(-offset[0] / imageSize);
-      const endX = Math.ceil((size[0] - offset[0] + dx) / imageSize);
+      const endX = safeCeil((size[0] - offset[0] + dx) / imageSize);
       const startY = Math.floor(-offset[1] / imageSize);
-      const endY = Math.ceil((size[1] - offset[1]) / imageSize);
+      const endY = safeCeil((size[1] - offset[1]) / imageSize);
       for (let y = startY; y < endY; y += 1) {
         for (let x = startX; x < endX; x += 1) {
           const url = baseTiles[y][x];
@@ -3309,10 +3314,18 @@ Please add \`${key}Action\` when creating your handler.`);
       const { offset, positions, image } = this.options;
       const { canvas, scale: scale2, options } = this.map;
       const size = [image.width, image.height];
+      size[0] /= devicePixelRatio;
+      size[1] /= devicePixelRatio;
       for (const i of positions) {
         const x = options.origin[0] - offset[0] + i[0];
         const y = options.origin[1] - offset[1] + i[1];
-        canvas.drawImage(image, x * scale2 - size[0] / 2, y * scale2 - size[1]);
+        canvas.drawImage(
+          image,
+          x * scale2 - size[0] / 2,
+          y * scale2 - size[1],
+          size[0],
+          size[1]
+        );
       }
     }
   };
@@ -3369,7 +3382,7 @@ Please add \`${key}Action\` when creating your handler.`);
     );
     await fetchAccessToken();
     const { record } = await api("icon/get/list", { size: 1e3 });
-    const iconSize = 32;
+    const iconSize = 32 * devicePixelRatio;
     const icons = {};
     for (const i of record) {
       icons[i.name] = i.url;
@@ -3402,19 +3415,18 @@ Please add \`${key}Action\` when creating your handler.`);
         canvas2d.arc(radius, radius, radius, 0, 2 * Math.PI);
         canvas2d.fillStyle = "rgba(255, 255, 255, 0.5)";
         canvas2d.fill();
-        let size = [image.width, image.height];
+        let size = [
+          image.width * devicePixelRatio,
+          image.height * devicePixelRatio
+        ];
         if (image.width > image.height) {
           size = [iconSize, size[1] * iconSize / size[0]];
         } else {
           size = [size[0] * iconSize / size[1], iconSize];
         }
-        canvas2d.drawImage(
-          image,
-          (iconSize - size[0]) / 2,
-          (iconSize - size[1]) / 2,
-          size[0],
-          size[1]
-        );
+        const x = (iconSize - size[0]) / 2;
+        const y = (iconSize - size[1]) / 2;
+        canvas2d.drawImage(image, x, y, size[0], size[1]);
         tilemap.draw();
       });
       return canvas;
