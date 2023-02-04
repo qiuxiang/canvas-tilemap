@@ -35,8 +35,7 @@ async function main() {
     // origin: [3568, 6286],
   });
 
-  tilemap.tileLayers.push(
-    // 提瓦特大陆
+  tilemap.tileLayers.add(
     new TileLayer(tilemap, {
       minZoom: 10,
       maxZoom: 13,
@@ -75,7 +74,7 @@ async function main() {
 
   async function addMarker(id: number) {
     const markers = await api("marker/get/list_byinfo", { itemIdList: [id] });
-    tilemap.markerLayers.push(
+    tilemap.markerLayers.add(
       new MarkerLayer(tilemap, {
         positions: markers.map((i: any) =>
           i.position.split(",").map((i: string) => parseInt(i))

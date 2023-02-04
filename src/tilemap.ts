@@ -37,8 +37,8 @@ export class Tilemap {
   minZoom = 0;
   canvas: CanvasRenderingContext2D;
   size = [0, 0];
-  tileLayers: TileLayer[] = [];
-  markerLayers: MarkerLayer[] = [];
+  tileLayers = new Set<TileLayer>();
+  markerLayers = new Set<MarkerLayer>();
   gesture: Gesture;
   lastDrawTime = 0;
 
@@ -54,23 +54,33 @@ export class Tilemap {
     } else {
       this.element = options.element;
     }
+
     this.canvas = this.element.getContext("2d")!;
-
-    const style = getComputedStyle(this.element);
-    this.element.width = parseFloat(style.width) * devicePixelRatio;
-    this.element.height = parseFloat(style.height) * devicePixelRatio;
-    this.size = [
-      this.element.width / devicePixelRatio,
-      this.element.height / devicePixelRatio,
-    ];
-
-    const minScale = Math.max(
-      this.size[0] / options.size[0],
-      this.size[1] / options.size[1]
-    );
-    this.minZoom = Math.log2(minScale);
-    this.scale = minScale;
     this.gesture = new Gesture(this);
+
+    const resizeObserver = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      setTimeout(() => this.resize(width, height), 0);
+    });
+    resizeObserver.observe(this.element);
+  }
+
+  resize(width: number, height: number) {
+    this.element.width = width;
+    this.element.height = height;
+    this.size = [width / devicePixelRatio, height / devicePixelRatio];
+    const minScale = Math.max(
+      this.size[0] / this.options.size[0],
+      this.size[1] / this.options.size[1]
+    );
+    const minZoom = Math.log2(minScale);
+    if (!this.scale) {
+      this.minZoom = minZoom;
+      this.scale = this.gesture.getNewScale(minScale);
+    } else if (this.minZoom != minZoom) {
+      this.minZoom = minZoom;
+      this.gesture.scaleTo(this.scale, [this.size[0] / 2, this.size[1] / 2]);
+    }
     this.draw();
   }
 

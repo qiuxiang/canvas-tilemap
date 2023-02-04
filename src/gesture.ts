@@ -46,7 +46,7 @@ export class Gesture {
     this.map = map;
     new UseGesture(this.map.element, {
       onWheel: this.onWheel.bind(this),
-      onPinchStart: () => this.initialScale = this.map.scale,
+      onPinchStart: () => (this.initialScale = this.map.scale),
       onPinch: this.onPinch.bind(this),
       onPinchEnd: this.onPinchEnd.bind(this),
       onDragStart: this.onDragStart.bind(this),
@@ -76,7 +76,7 @@ export class Gesture {
   }
 
   onPinch(state: FullGestureState<"pinch">) {
-    const { origin, da, initial, touches, timeStamp, } = state
+    const { origin, da, initial, touches, timeStamp } = state;
     if (touches != 2) return;
 
     this.lastPinchTime = timeStamp;
@@ -150,11 +150,16 @@ export class Gesture {
     }
   }
 
-  scaleTo(newScale: number, origin: [number, number]) {
-    const { offset, scale, minZoom, options } = this.map;
+  getNewScale(newScale: number) {
+    const { minZoom, options } = this.map;
     let zoom = Math.log2(newScale);
     zoom = Math.max(Math.min(zoom, options.maxZoom!), minZoom);
-    newScale = 2 ** zoom;
+    return 2 ** zoom;
+  }
+
+  scaleTo(newScale: number, origin: [number, number]) {
+    const { offset, scale } = this.map;
+    newScale = this.getNewScale(newScale);
     const ratio = (newScale - scale) / scale;
     this.map.scale = newScale;
     this.setOffset(0, offset[0] - (origin[0] - offset[0]) * ratio);
