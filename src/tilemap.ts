@@ -1,6 +1,7 @@
 import { TileLayer } from "./tile-layer";
 import { Gesture } from "./gesture";
 import { MarkerLayer } from "./marker-layer";
+import { DomLayer } from "./dom-layer";
 
 export interface TilemapOptions {
   /**
@@ -29,8 +30,8 @@ export interface TilemapOptions {
   maxZoom?: number;
 
   onClick?: (event?: MarkerEvent) => void;
-
   onMouseMove?: (event?: MarkerEvent) => void;
+  offset?: [number, number];
 }
 
 export interface MarkerEvent {
@@ -53,12 +54,14 @@ export class Tilemap {
   size = [0, 0];
   tileLayers = new Set<TileLayer>();
   markerLayers = new Set<MarkerLayer>();
+  domLayers = new Set<DomLayer>();
   gesture: Gesture;
   lastDrawTime = 0;
 
   constructor(options: TilemapOptions) {
     this.options = {
       ...options,
+      offset: options.offset ?? [0, 0],
       tileSize: options.tileSize ?? 256,
       maxZoom: options.maxZoom ?? 0,
     };
@@ -104,17 +107,17 @@ export class Tilemap {
 
   findMarker(point: [number, number]): [MarkerLayer, number] | undefined {
     const { scale, offset } = this;
-    const { origin } = this.options;
+    const { origin, offset: mapOffset } = this.options;
     const markerLayers = Array.from(this.markerLayers).reverse();
     for (const marker of markerLayers) {
-      const { image, positions, offset: markerOffset } = marker.options;
+      const { image, positions } = marker.options;
       const size = [image.width as number, image.height as number];
       size[0] /= devicePixelRatio;
       size[1] /= devicePixelRatio;
       for (let index = positions.length - 1; index >= 0; index -= 1) {
         let [x, y] = positions[index];
-        x = (x + origin[0] - markerOffset![0]) * scale + offset[0];
-        y = (y + origin[1] - markerOffset![1]) * scale + offset[1];
+        x = (x + origin[0] - mapOffset![0]) * scale + offset[0];
+        y = (y + origin[1] - mapOffset![1]) * scale + offset[1];
         if (
           point[0] > x - size[0] / 2 &&
           point[0] < x + size[0] / 2 &&
@@ -125,6 +128,11 @@ export class Tilemap {
         }
       }
     }
+  }
+
+  toViewPosition([x, y]: [number, number]) {
+    // x = (x + origin[0] - markerOffset![0]) * scale + offset[0];
+    // y = (y + origin[1] - markerOffset![1]) * scale + offset[1];
   }
 
   resize(width: number, height: number) {

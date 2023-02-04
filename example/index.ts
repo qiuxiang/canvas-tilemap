@@ -1,4 +1,4 @@
-import { Tilemap, TileLayer, MarkerLayer, MarkerEvent } from "../src";
+import { Tilemap, TileLayer, MarkerLayer, DomLayer } from "../src";
 
 let accessToken = "";
 
@@ -24,23 +24,31 @@ async function fetchAccessToken() {
 }
 
 async function main() {
-  const tileOffset: [number, number] = [-5120, 0];
+  const mapOffset: [number, number] = [-5120, 0];
   const tilemap = new Tilemap({
     element: "#tilemap",
     size: [17408, 16384],
     origin: [3568, 6286],
     maxZoom: 0.5,
+    offset: mapOffset,
 
     // 渊下宫
     // size: [12288, 12288],
     // origin: [3568, 6286],
   });
 
+  // const dom = document.createElement("div");
+  // dom.style.width = "100px";
+  // dom.style.height = "100px";
+  // dom.style.background = "#fff";
+  // tilemap.domLayers.add(
+  //   new DomLayer(tilemap, { element: dom, position: [191, -2528] })
+  // );
+
   tilemap.tileLayers.add(
     new TileLayer(tilemap, {
       minZoom: 10,
       maxZoom: 13,
-      offset: tileOffset,
       getTileUrl(x, y, z) {
         return `https://assets.yuanshen.site/tiles_twt34/${z}/${x}_${y}.png`;
       },
@@ -79,7 +87,6 @@ async function main() {
   const activeMarkerLayer = new MarkerLayer(tilemap, {
     positions: [],
     image: new Image(),
-    offset: tileOffset,
   });
   tilemap.options.onClick = (event) => {
     if (event) {
@@ -99,24 +106,6 @@ async function main() {
     }
   };
 
-  function activateMarker(event: MarkerEvent | undefined) {
-    if (event) {
-      const { target, index } = event;
-      if (target == activeMarkerLayer) return;
-
-      const { image, positions } = target.options;
-      tilemap.markerLayers.add(activeMarkerLayer);
-      activeMarkerLayer.options.positions[0] = positions[index];
-      activeMarkerLayer.options.image = createActiveMarkerImage(
-        image as HTMLCanvasElement
-      );
-      tilemap.draw();
-    } else if (tilemap.markerLayers.has(activeMarkerLayer)) {
-      tilemap.markerLayers.delete(activeMarkerLayer);
-      tilemap.draw();
-    }
-  }
-
   async function addMarker(id: number) {
     const markers = await api("marker/get/list_byinfo", { itemIdList: [id] });
     tilemap.markerLayers.add(
@@ -125,7 +114,6 @@ async function main() {
           i.position.split(",").map((i: string) => parseInt(i))
         ),
         image: createMarkerImage(icons[markers[0].itemList[0].iconTag]),
-        offset: tileOffset,
       })
     );
   }

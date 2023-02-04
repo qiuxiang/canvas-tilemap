@@ -3,7 +3,6 @@ import { Layer, Tilemap } from "./tilemap";
 export interface MarkerLayerOptions {
   positions: [number, number][];
   image: CanvasImageSource;
-  offset?: [number, number];
   onClick?: (index: number) => void;
   onMouseMove?: (index: number) => void;
 }
@@ -15,18 +14,18 @@ export class MarkerLayer extends Layer {
   constructor(map: Tilemap, options: MarkerLayerOptions) {
     super();
     this.map = map;
-    this.options = { ...options, offset: options.offset ?? [0, 0] };
+    this.options = options;
   }
 
   draw() {
-    const { offset, positions, image } = this.options;
+    const { positions, image } = this.options;
     const { render: canvas, scale, options } = this.map;
     const size = [image.width as number, image.height as number];
     size[0] /= devicePixelRatio;
     size[1] /= devicePixelRatio;
     for (const i of positions) {
-      const x = options.origin[0] - offset![0] + i[0];
-      const y = options.origin[1] - offset![1] + i[1];
+      const x = options.origin[0] - options.offset![0] + i[0];
+      const y = options.origin[1] - options.offset![1] + i[1];
       canvas.drawImage(
         image,
         x * scale - size[0] / 2,
