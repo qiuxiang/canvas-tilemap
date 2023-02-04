@@ -3121,11 +3121,15 @@ Please add \`${key}Action\` when creating your handler.`);
         this.lastDragTime = timeStamp;
       }
     }
-    scaleTo(newScale, origin) {
-      const { offset, scale: scale2, minZoom, options } = this.map;
+    getNewScale(newScale) {
+      const { minZoom, options } = this.map;
       let zoom = Math.log2(newScale);
       zoom = Math.max(Math.min(zoom, options.maxZoom), minZoom);
-      newScale = 2 ** zoom;
+      return 2 ** zoom;
+    }
+    scaleTo(newScale, origin) {
+      const { offset, scale: scale2 } = this.map;
+      newScale = this.getNewScale(newScale);
       const ratio = (newScale - scale2) / scale2;
       this.map.scale = newScale;
       this.setOffset(0, offset[0] - (origin[0] - offset[0]) * ratio);
@@ -3148,8 +3152,8 @@ Please add \`${key}Action\` when creating your handler.`);
     minZoom = 0;
     canvas;
     size = [0, 0];
-    tileLayers = [];
-    markerLayers = [];
+    tileLayers = /* @__PURE__ */ new Set();
+    markerLayers = /* @__PURE__ */ new Set();
     gesture;
     lastDrawTime = 0;
     constructor(options) {
@@ -3164,20 +3168,29 @@ Please add \`${key}Action\` when creating your handler.`);
         this.element = options.element;
       }
       this.canvas = this.element.getContext("2d");
-      const style = getComputedStyle(this.element);
-      this.element.width = parseFloat(style.width) * devicePixelRatio;
-      this.element.height = parseFloat(style.height) * devicePixelRatio;
-      this.size = [
-        this.element.width / devicePixelRatio,
-        this.element.height / devicePixelRatio
-      ];
-      const minScale = Math.max(
-        this.size[0] / options.size[0],
-        this.size[1] / options.size[1]
-      );
-      this.minZoom = Math.log2(minScale);
-      this.scale = minScale;
       this.gesture = new Gesture3(this);
+      const resizeObserver = new ResizeObserver(([entry]) => {
+        const { width, height } = entry.contentRect;
+        setTimeout(() => this.resize(width, height), 0);
+      });
+      resizeObserver.observe(this.element);
+    }
+    resize(width, height) {
+      this.element.width = width;
+      this.element.height = height;
+      this.size = [width / devicePixelRatio, height / devicePixelRatio];
+      const minScale = Math.max(
+        this.size[0] / this.options.size[0],
+        this.size[1] / this.options.size[1]
+      );
+      const minZoom = Math.log2(minScale);
+      if (!this.scale) {
+        this.minZoom = minZoom;
+        this.scale = this.gesture.getNewScale(minScale);
+      } else if (this.minZoom != minZoom) {
+        this.minZoom = minZoom;
+        this.gesture.scaleTo(this.scale, [this.size[0] / 2, this.size[1] / 2]);
+      }
       this.draw();
     }
     draw() {
@@ -3335,8 +3348,7 @@ Please add \`${key}Action\` when creating your handler.`);
       // size: [12288, 12288],
       // origin: [3568, 6286],
     });
-    tilemap.tileLayers.push(
-      // 提瓦特大陆
+    tilemap.tileLayers.add(
       new TileLayer(tilemap, {
         minZoom: 10,
         maxZoom: 13,
@@ -3368,7 +3380,7 @@ Please add \`${key}Action\` when creating your handler.`);
     await addMarker(97);
     async function addMarker(id) {
       const markers = await api("marker/get/list_byinfo", { itemIdList: [id] });
-      tilemap.markerLayers.push(
+      tilemap.markerLayers.add(
         new MarkerLayer(tilemap, {
           positions: markers.map(
             (i) => i.position.split(",").map((i2) => parseInt(i2))
