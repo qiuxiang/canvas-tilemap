@@ -19,11 +19,24 @@ export class DomLayer extends Layer {
     this.element.style.top = "0";
     this.element.style.left = "0";
     this.element.appendChild(options.element);
+    this.element.addEventListener("click", (event) => {
+      if (event.target != this.element) {
+        event.stopPropagation();
+      }
+    });
     this.map.element.appendChild(this.element);
     this.draw();
+
+    const resizeObserver = new ResizeObserver(([entry]) => {
+      const { blockSize, inlineSize } = entry.borderBoxSize[0];
+      this.element.style.width = `${inlineSize}px`;
+      this.element.style.height = `${blockSize}px`;
+    });
+    resizeObserver.observe(options.element);
   }
 
   draw() {
-    this.element.style.transform = `translate(0, 0)`;
+    const [x, y] = this.map.toPointPosition(this.options.position);
+    this.element.style.transform = `translate(${x}px, ${y}px)`;
   }
 }

@@ -20,18 +20,13 @@ export interface TilemapOptions {
   origin: [number, number];
 
   /**
-   * default: 256
-   */
-  tileSize?: number;
-
-  /**
    * default: 0
    */
   maxZoom?: number;
 
   onClick?: (event?: MarkerEvent) => void;
   onMouseMove?: (event?: MarkerEvent) => void;
-  offset?: [number, number];
+  tileOffset?: [number, number];
 }
 
 export interface MarkerEvent {
@@ -46,11 +41,11 @@ export abstract class Layer {
 export class Tilemap {
   element: HTMLElement;
   canvas: HTMLCanvasElement;
+  canvas2d: CanvasRenderingContext2D;
   options: TilemapOptions;
   offset = [0, 0];
   scale = 0;
   minZoom = 0;
-  render: CanvasRenderingContext2D;
   size = [0, 0];
   tileLayers = new Set<TileLayer>();
   markerLayers = new Set<MarkerLayer>();
@@ -61,8 +56,7 @@ export class Tilemap {
   constructor(options: TilemapOptions) {
     this.options = {
       ...options,
-      offset: options.offset ?? [0, 0],
-      tileSize: options.tileSize ?? 256,
+      tileOffset: options.tileOffset ?? [0, 0],
       maxZoom: options.maxZoom ?? 0,
     };
 
@@ -72,10 +66,10 @@ export class Tilemap {
       this.element = options.element;
     }
 
+    this.element.style.touchAction = "none";
     this.canvas = document.createElement("canvas");
-    this.canvas.style.touchAction = "none";
     this.element.appendChild(this.canvas);
-    this.render = this.canvas.getContext("2d")!;
+    this.canvas2d = this.canvas.getContext("2d")!;
     this.gesture = new Gesture(this);
 
     const resizeObserver = new ResizeObserver(([entry]) => {
@@ -83,16 +77,6 @@ export class Tilemap {
       setTimeout(() => this.resize(width, height), 0);
     });
     resizeObserver.observe(this.element);
-
-    this.element.addEventListener("click", ({ clientX, clientY }) => {
-      const result = this.findMarker([clientX, clientY]);
-      if (result) {
-        result?.[0].options.onClick?.(result[1]);
-        this.options.onClick?.({ target: result[0], index: result[1] });
-        return;
-      }
-      this.options.onClick?.();
-    });
 
     this.element.addEventListener("mousemove", ({ clientX, clientY }) => {
       const result = this.findMarker([clientX, clientY]);
@@ -103,26 +87,39 @@ export class Tilemap {
       }
       this.options.onMouseMove?.();
     });
+
+    this.domLayers.clear = new Proxy(this.domLayers.clear, {
+      apply: (target, thisArg: Set<DomLayer>) => {
+        for (const i of thisArg.values()) {
+          this.element.removeChild(i.element);
+        }
+        return target.apply(thisArg);
+      },
+    });
+
+    this.domLayers.delete = new Proxy(this.domLayers.delete, {
+      apply: (target, thisArg: Set<DomLayer>, argArray: [DomLayer]) => {
+        this.element.removeChild(argArray[0].element);
+        return target.apply(thisArg, argArray);
+      },
+    });
   }
 
   findMarker(point: [number, number]): [MarkerLayer, number] | undefined {
-    const { scale, offset } = this;
-    const { origin, offset: mapOffset } = this.options;
     const markerLayers = Array.from(this.markerLayers).reverse();
     for (const marker of markerLayers) {
-      const { image, positions } = marker.options;
+      const { image, positions, anchor } = marker.options;
       const size = [image.width as number, image.height as number];
       size[0] /= devicePixelRatio;
       size[1] /= devicePixelRatio;
       for (let index = positions.length - 1; index >= 0; index -= 1) {
-        let [x, y] = positions[index];
-        x = (x + origin[0] - mapOffset![0]) * scale + offset[0];
-        y = (y + origin[1] - mapOffset![1]) * scale + offset[1];
+        let [x, y] = this.toPointPosition(positions[index]);
+        const centerOffset = [size[0] * anchor![0], size[1] * anchor![1]];
         if (
-          point[0] > x - size[0] / 2 &&
-          point[0] < x + size[0] / 2 &&
-          point[1] > y - size[1] &&
-          point[1] < y
+          point[0] > x - centerOffset[0] &&
+          point[0] < x + (size[0] - centerOffset[0]) &&
+          point[1] > y - centerOffset[1] &&
+          point[1] < y + (size[0] - centerOffset[0])
         ) {
           return [marker, index];
         }
@@ -130,9 +127,13 @@ export class Tilemap {
     }
   }
 
-  toViewPosition([x, y]: [number, number]) {
-    // x = (x + origin[0] - markerOffset![0]) * scale + offset[0];
-    // y = (y + origin[1] - markerOffset![1]) * scale + offset[1];
+  toPointPosition([x, y]: [number, number]) {
+    const { scale, offset } = this;
+    const { origin, tileOffset } = this.options;
+    return [
+      (x + origin[0] - tileOffset![0]) * scale + offset[0],
+      (y + origin[1] - tileOffset![1]) * scale + offset[1],
+    ];
   }
 
   resize(width: number, height: number) {
@@ -160,15 +161,18 @@ export class Tilemap {
     const now = Date.now();
     if (now != this.lastDrawTime) {
       requestAnimationFrame(() => {
-        const { render: canvas, canvas: element, offset } = this;
+        const { canvas2d: canvas, canvas: element, offset } = this;
         canvas.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
         canvas.clearRect(0, 0, element.width, element.height);
         canvas.translate(offset[0], offset[1]);
-        for (const tileLayer of this.tileLayers) {
-          tileLayer.draw();
+        for (const layer of this.tileLayers) {
+          layer.draw();
         }
-        for (const markerLayer of this.markerLayers) {
-          markerLayer.draw();
+        for (const layer of this.markerLayers) {
+          layer.draw();
+        }
+        for (const layer of this.domLayers) {
+          layer.draw();
         }
       });
       this.lastDrawTime = now;

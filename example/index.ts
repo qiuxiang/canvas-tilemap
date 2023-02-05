@@ -30,20 +30,12 @@ async function main() {
     size: [17408, 16384],
     origin: [3568, 6286],
     maxZoom: 0.5,
-    offset: mapOffset,
+    tileOffset: mapOffset,
 
     // 渊下宫
     // size: [12288, 12288],
     // origin: [3568, 6286],
   });
-
-  // const dom = document.createElement("div");
-  // dom.style.width = "100px";
-  // dom.style.height = "100px";
-  // dom.style.background = "#fff";
-  // tilemap.domLayers.add(
-  //   new DomLayer(tilemap, { element: dom, position: [191, -2528] })
-  // );
 
   tilemap.tileLayers.add(
     new TileLayer(tilemap, {
@@ -68,12 +60,12 @@ async function main() {
   await fetchAccessToken();
   const { record } = await api("icon/get/list", { size: 1000 });
   const iconSize = 32 * devicePixelRatio;
+  const markersMap = new Map<MarkerLayer, any[]>();
   const icons: Record<string, string> = {};
   for (const i of record) {
     icons[i.name] = i.url;
   }
 
-  // 提瓦特大陆点位
   await addMarker(126);
   // await addMarker(1242);
   // await addMarker(1561);
@@ -99,23 +91,40 @@ async function main() {
       activeMarkerLayer.options.image = createActiveMarkerImage(
         image as HTMLCanvasElement
       );
+
+      const marker = markersMap.get(target)![index];
+      const markerElement = document.createElement("div");
+      markerElement.className = "marker";
+      markerElement.innerHTML = `
+        <div class="marker-title">${marker.markerTitle}</div>
+        <div class="marker-content">${marker.content}</div>
+        ${marker.picture ? `<img src="${marker.picture}">` : ""}
+      `;
+      tilemap.domLayers.clear();
+      tilemap.domLayers.add(
+        new DomLayer(tilemap, {
+          element: markerElement,
+          position: positions[index],
+        })
+      );
       tilemap.draw();
-    } else if (tilemap.markerLayers.has(activeMarkerLayer)) {
+    } else {
       tilemap.markerLayers.delete(activeMarkerLayer);
+      tilemap.domLayers.clear();
       tilemap.draw();
     }
   };
 
   async function addMarker(id: number) {
     const markers = await api("marker/get/list_byinfo", { itemIdList: [id] });
-    tilemap.markerLayers.add(
-      new MarkerLayer(tilemap, {
-        positions: markers.map((i: any) =>
-          i.position.split(",").map((i: string) => parseInt(i))
-        ),
-        image: createMarkerImage(icons[markers[0].itemList[0].iconTag]),
-      })
-    );
+    const markerLayer = new MarkerLayer(tilemap, {
+      positions: markers.map((i: any) =>
+        i.position.split(",").map((i: string) => parseInt(i))
+      ),
+      image: createMarkerImage(icons[markers[0].itemList[0].iconTag]),
+    });
+    markersMap.set(markerLayer, markers);
+    tilemap.markerLayers.add(markerLayer);
   }
 
   function createActiveMarkerImage(image: HTMLCanvasElement) {

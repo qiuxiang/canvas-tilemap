@@ -1,4 +1,8 @@
-import { FullGestureState, Gesture as UseGesture } from "@use-gesture/vanilla";
+import {
+  FullGestureState,
+  Gesture as UseGesture,
+  SharedGestureState,
+} from "@use-gesture/vanilla";
 import { inertia } from "popmotion";
 import { Tilemap } from ".";
 
@@ -44,7 +48,7 @@ export class Gesture {
 
   constructor(map: Tilemap) {
     this.map = map;
-    new UseGesture(this.map.canvas, {
+    new UseGesture(this.map.element, {
       onWheel: this.onWheel.bind(this),
       onPinchStart: () => (this.initialScale = this.map.scale),
       onPinch: this.onPinch.bind(this),
@@ -52,6 +56,7 @@ export class Gesture {
       onDragStart: this.onDragStart.bind(this),
       onDrag: this.onDrag.bind(this),
       onDragEnd: this.onDragEnd.bind(this),
+      onClick: this.onClick.bind(this),
     });
   }
 
@@ -148,6 +153,43 @@ export class Gesture {
     if (distance[0] > 2 || distance[1] > 2) {
       this.lastDragTime = timeStamp;
     }
+  }
+
+  onClick({ event }: { event: MouseEvent }) {
+    if (event.timeStamp == this.lastDragTime) return;
+
+    const doubleClickDelay = 200;
+    if (event.timeStamp - this.lastClickTime < doubleClickDelay) {
+      const lastScale = this.map.scale;
+      this.scaleAnimation?.stop();
+      this.scaleAnimation = inertia({
+        velocity: 1,
+        power: 1,
+        timeConstant: 100,
+        restDelta: 0.001,
+        onUpdate: (value) => {
+          const zoom = Math.log2(lastScale) + value;
+          this.scaleTo(2 ** zoom, [event.x, event.y]);
+        },
+      });
+    } else {
+      setTimeout(() => {
+        if (event.timeStamp == this.lastClickTime) {
+          this.onClickTilemap([event.x, event.y]);
+        }
+      }, doubleClickDelay);
+    }
+    this.lastClickTime = event.timeStamp;
+  }
+
+  onClickTilemap(position: [number, number]) {
+    const result = this.map.findMarker(position);
+    if (result) {
+      result?.[0].options.onClick?.(result[1]);
+      this.map.options.onClick?.({ target: result[0], index: result[1] });
+      return;
+    }
+    this.map.options.onClick?.();
   }
 
   getNewScale(newScale: number) {
