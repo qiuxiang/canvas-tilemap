@@ -13,6 +13,42 @@
     height: 100%;
     touch-action: none;
   }
+
+  .marker {
+    width: 160px;
+    position: relative;
+    left: -50%;
+    top: calc(-100% - 38px);
+    background: #fff;
+    border-radius: 8px;
+    padding: 8px;
+    font-size: small;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .marker:after {
+    content: "";
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 8px solid #fff;
+    bottom: -6px;
+    left: 50%;
+    margin-left: -8px;
+  }
+
+  .marker img {
+    width: 100%;
+  }
+
+  .marker-content {
+    color: #666;
+    font-size: smaller;
+  }
 </style>
 <div id="tilemap"></div>
 <script src="index.js"></script>
