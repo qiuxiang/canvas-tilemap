@@ -10,11 +10,6 @@ export interface TileLayerOptions {
    * default: 256
    */
   tileSize?: number;
-
-  /**
-   * hack, fixe tile offset
-   */
-  dx?: number;
 }
 
 export class TileLayer extends Layer {

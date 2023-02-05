@@ -161,10 +161,10 @@ export class Tilemap {
     const now = Date.now();
     if (now != this.lastDrawTime) {
       requestAnimationFrame(() => {
-        const { canvas2d: canvas, canvas: element, offset } = this;
-        canvas.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
-        canvas.clearRect(0, 0, element.width, element.height);
-        canvas.translate(offset[0], offset[1]);
+        const { canvas2d, canvas, offset } = this;
+        canvas2d.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+        canvas2d.clearRect(0, 0, canvas.width, canvas.height);
+        canvas2d.translate(offset[0], offset[1]);
         for (const layer of this.tileLayers) {
           layer.draw();
         }

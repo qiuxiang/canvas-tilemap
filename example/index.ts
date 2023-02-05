@@ -24,13 +24,13 @@ async function fetchAccessToken() {
 }
 
 async function main() {
-  const mapOffset: [number, number] = [-5120, 0];
+  const tileOffset: [number, number] = [-5120, 0];
   const tilemap = new Tilemap({
     element: "#tilemap",
     size: [17408, 16384],
     origin: [3568, 6286],
     maxZoom: 0.5,
-    tileOffset: mapOffset,
+    tileOffset,
 
     // 渊下宫
     // size: [12288, 12288],
