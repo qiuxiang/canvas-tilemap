@@ -1,40 +1,21 @@
 import { Tilemap, TileLayer, MarkerLayer, DomLayer } from "../src";
-
-let accessToken = "";
-
-async function api(path: string, params: Record<string, any> = {}) {
-  const response = await fetch(`https://cloud.yuanshen.site/api/${path}`, {
-    method: "post",
-    body: JSON.stringify(params),
-    headers: {
-      "content-type": "application/json",
-      authorization: `Bearer ${accessToken}`,
-    },
-  });
-  return (await response.json())["data"];
-}
-
-async function fetchAccessToken() {
-  const headers = { authorization: "Basic Y2xpZW50OnNlY3JldA==" };
-  const response = await fetch(
-    "https://cloud.yuanshen.site/oauth/token?scope=all&grant_type=client_credentials",
-    { method: "post", headers }
-  );
-  accessToken = (await response.json())["access_token"];
-}
+import { ImageBounds, ImageLayer } from "../src/image-layer";
+import { api, fetchAccessToken } from "./api";
+import { underground2Maps, underground3Maps, undergroundMaps } from "./data";
 
 async function main() {
+  // 渊下宫
+  // const size: [number, number] = [12288, 12288],
+  // const origin: [number, number] = [3568, 6286],
+  const size: [number, number] = [17408, 16384];
+  const origin: [number, number] = [3568, 6286];
   const tileOffset: [number, number] = [-5120, 0];
   const tilemap = new Tilemap({
     element: "#tilemap",
-    size: [17408, 16384],
-    origin: [3568, 6286],
-    maxZoom: 0.5,
+    size,
     tileOffset,
-
-    // 渊下宫
-    // size: [12288, 12288],
-    // origin: [3568, 6286],
+    origin,
+    maxZoom: 0.5,
   });
 
   tilemap.tileLayers.add(
@@ -44,7 +25,6 @@ async function main() {
       getTileUrl(x, y, z) {
         return `https://assets.yuanshen.site/tiles_twt34/${z}/${x}_${y}.png`;
       },
-      dx: 1024,
     })
 
     // 渊下宫
@@ -57,6 +37,8 @@ async function main() {
     // })
   );
 
+  // enableUndergroundMaps();
+
   await fetchAccessToken();
   const { record } = await api("icon/get/list", { size: 1000 });
   const iconSize = 32 * devicePixelRatio;
@@ -66,20 +48,22 @@ async function main() {
     icons[i.name] = i.url;
   }
 
-  await addMarker(126);
-  // await addMarker(1242);
-  // await addMarker(1561);
-  // await addMarker(97);
-  await addMarker(159);
+  addMarker(126);
+  addMarker(1242);
+  addMarker(1561);
+  addMarker(97);
+  addMarker(159);
 
   // 渊下宫点位
-  // await addMarker(660);
-  // await addMarker(627);
+  // addMarker(660);
+  // addMarker(627);
 
   const activeMarkerLayer = new MarkerLayer(tilemap, {
     positions: [],
     image: new Image(),
   });
+
+  // 点击事件处理
   tilemap.options.onClick = (event) => {
     if (event) {
       const { target, index } = event;
@@ -165,6 +149,48 @@ async function main() {
       tilemap.draw();
     });
     return canvas;
+  }
+
+  function enableUndergroundMaps() {
+    const canvas = document.createElement("canvas");
+    const canvas2d = canvas.getContext("2d")!;
+    canvas2d.fillStyle = "rgba(0, 0, 0, 0.68)";
+    canvas2d.rect(0, 0, canvas.width, canvas.height);
+    canvas2d.fill();
+    tilemap.imageLayers.add(
+      new ImageLayer(tilemap, {
+        image: canvas,
+        bounds: [
+          [-origin[0] + tileOffset[0], -origin[1] + tileOffset[1]],
+          size,
+        ],
+      })
+    );
+
+    for (const [_, { imageUrl, imageBounds }] of undergroundMaps) {
+      addImageLayer(imageUrl, imageBounds);
+    }
+
+    for (const [image, bounds] of underground2Maps) {
+      addImageLayer(
+        `https://assets.yuanshen.site/overlay/SM/${image}.png`,
+        bounds
+      );
+    }
+
+    for (const [image, bounds] of underground3Maps) {
+      addImageLayer(
+        `https://assets.yuanshen.site/overlay/${image}.png`,
+        bounds
+      );
+    }
+  }
+
+  function addImageLayer(url: string, bounds: ImageBounds) {
+    const image = new Image();
+    image.src = url;
+    image.addEventListener("load", () => tilemap.draw());
+    tilemap.imageLayers.add(new ImageLayer(tilemap, { image, bounds }));
   }
 }
 

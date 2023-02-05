@@ -2,6 +2,7 @@ import { TileLayer } from "./tile-layer";
 import { Gesture } from "./gesture";
 import { MarkerLayer } from "./marker-layer";
 import { DomLayer } from "./dom-layer";
+import { ImageLayer } from "./image-layer";
 
 export interface TilemapOptions {
   /**
@@ -50,6 +51,7 @@ export class Tilemap {
   tileLayers = new Set<TileLayer>();
   markerLayers = new Set<MarkerLayer>();
   domLayers = new Set<DomLayer>();
+  imageLayers = new Set<ImageLayer>();
   gesture: Gesture;
   lastDrawTime = 0;
 
@@ -166,6 +168,9 @@ export class Tilemap {
         canvas2d.clearRect(0, 0, canvas.width, canvas.height);
         canvas2d.translate(offset[0], offset[1]);
         for (const layer of this.tileLayers) {
+          layer.draw();
+        }
+        for (const layer of this.imageLayers) {
           layer.draw();
         }
         for (const layer of this.markerLayers) {
