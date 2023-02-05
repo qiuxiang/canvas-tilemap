@@ -3194,6 +3194,7 @@ Please add \`${key}Action\` when creating your handler.`);
     tileLayers = /* @__PURE__ */ new Set();
     markerLayers = /* @__PURE__ */ new Set();
     domLayers = /* @__PURE__ */ new Set();
+    imageLayers = /* @__PURE__ */ new Set();
     gesture;
     lastDrawTime = 0;
     constructor(options) {
@@ -3294,6 +3295,9 @@ Please add \`${key}Action\` when creating your handler.`);
           canvas2d.clearRect(0, 0, canvas.width, canvas.height);
           canvas2d.translate(offset[0], offset[1]);
           for (const layer of this.tileLayers) {
+            layer.draw();
+          }
+          for (const layer of this.imageLayers) {
             layer.draw();
           }
           for (const layer of this.markerLayers) {
@@ -3463,7 +3467,31 @@ Please add \`${key}Action\` when creating your handler.`);
     }
   };
 
-  // example/index.ts
+  // src/image-layer.ts
+  var ImageLayer = class extends Layer {
+    map;
+    options;
+    constructor(map, options) {
+      super();
+      this.map = map;
+      this.options = options;
+    }
+    draw() {
+      const { image, bounds } = this.options;
+      const { canvas2d, options, scale: scale2 } = this.map;
+      const offset = [
+        options.origin[0] - options.tileOffset[0],
+        options.origin[1] - options.tileOffset[1]
+      ];
+      const x0 = (offset[0] + bounds[0][0]) * scale2;
+      const y0 = (offset[1] + bounds[0][1]) * scale2;
+      const x1 = (offset[0] + bounds[1][0]) * scale2;
+      const y1 = (offset[1] + bounds[1][1]) * scale2;
+      canvas2d.drawImage(image, x0, y0, x1 - x0, y1 - y0);
+    }
+  };
+
+  // example/api.ts
   var accessToken = "";
   async function api(path, params = {}) {
     const response = await fetch(`https://cloud.yuanshen.site/api/${path}`, {
@@ -3484,17 +3512,443 @@ Please add \`${key}Action\` when creating your handler.`);
     );
     accessToken = (await response.json())["access_token"];
   }
+
+  // example/data.ts
+  var undergroundMaps = [
+    [
+      "\u8BF8\u6CD5\u4E1B\u6797-\u5E95\u56FE1",
+      {
+        imageUrl: `https://assets.yuanshen.site/overlay/YL/1.png`,
+        imageBounds: [
+          [-6299 + 1427, -2190 + 1353],
+          [-6299 + 1427 + 404, -2190 + 1353 + 504]
+        ]
+      }
+    ],
+    [
+      "\u8BF8\u6CD5\u4E1B\u6797-\u5E95\u56FE2",
+      {
+        imageUrl: `https://assets.yuanshen.site/overlay/YL/2.png`,
+        imageBounds: [
+          [-6299 + 1299, -2190 + 2040],
+          [-6299 + 1299 + 648, -2190 + 2040 + 570]
+        ]
+      }
+    ],
+    [
+      "\u8BF8\u6CD5\u4E1B\u6797-\u5E95\u56FE3",
+      {
+        imageUrl: `https://assets.yuanshen.site/overlay/YL/3.png`,
+        imageBounds: [
+          [-6299 + 2199, -2190 + 1671],
+          [-6299 + 2199 + 398, -2190 + 1671 + 306]
+        ]
+      }
+    ],
+    [
+      "\u8BF8\u6CD5\u4E1B\u6797-\u5E95\u56FE4",
+      {
+        imageUrl: `https://assets.yuanshen.site/overlay/YL/4.png`,
+        imageBounds: [
+          [-6299 + 2177, -2190 + 2168],
+          [-6299 + 2177 + 570, -2190 + 2168 + 515]
+        ]
+      }
+    ],
+    [
+      "\u8BF8\u6CD5\u4E1B\u6797-\u5E95\u56FE5",
+      {
+        imageUrl: `https://assets.yuanshen.site/overlay/YL/5.png`,
+        imageBounds: [
+          [-6299 + 2734, -2190 + 937],
+          [-6299 + 2734 + 433, -2190 + 937 + 660]
+        ]
+      }
+    ],
+    [
+      "\u8BF8\u6CD5\u4E1B\u6797-\u5E95\u56FE6",
+      {
+        imageUrl: `https://assets.yuanshen.site/overlay/YL/6.png`,
+        imageBounds: [
+          [-6299 + 3323, -2190 + 507],
+          [-6299 + 3323 + 443, -2190 + 507 + 377]
+        ]
+      }
+    ],
+    [
+      "\u8BF8\u6CD5\u4E1B\u6797-\u5E95\u56FE7",
+      {
+        imageUrl: `https://assets.yuanshen.site/overlay/YL/7.png`,
+        imageBounds: [
+          [-6299 + 3426, -2190 + 924],
+          [-6299 + 3426 + 278, -2190 + 924 + 360]
+        ]
+      }
+    ],
+    [
+      "\u8BF8\u6CD5\u4E1B\u6797-\u5E95\u56FE8",
+      {
+        imageUrl: `https://assets.yuanshen.site/overlay/YL/8.png`,
+        imageBounds: [
+          [-6299 + 3796, -2190 + 1024],
+          [-6299 + 3796 + 344, -2190 + 1024 + 393]
+        ]
+      }
+    ],
+    [
+      "\u8BF8\u6CD5\u4E1B\u6797-\u5E95\u56FE9",
+      {
+        imageUrl: `https://assets.yuanshen.site/overlay/YL/9.png`,
+        imageBounds: [
+          [-6299 + 3563, -2190 + 1604],
+          [-6299 + 3563 + 443, -2190 + 1604 + 799]
+        ]
+      }
+    ],
+    [
+      "\u8BF8\u6CD5\u4E1B\u6797-\u5E95\u56FE10",
+      {
+        imageUrl: `https://assets.yuanshen.site/overlay/YL/10.png`,
+        imageBounds: [
+          [-6299 + 3787, -2190 + 2710],
+          [-6299 + 3787 + 378, -2190 + 2710 + 560]
+        ]
+      }
+    ],
+    [
+      "\u8BF8\u6CD5\u4E1B\u6797-\u5E95\u56FE11",
+      {
+        imageUrl: `https://assets.yuanshen.site/overlay/YL/11.png`,
+        imageBounds: [
+          [-6299 + 3086, -2190 + 3297],
+          [-6299 + 3086 + 521, -2190 + 3297 + 433]
+        ]
+      }
+    ],
+    [
+      "\u8BF8\u6CD5\u4E1B\u6797-\u5E95\u56FE12",
+      {
+        imageUrl: `https://assets.yuanshen.site/overlay/YL/12.png`,
+        imageBounds: [
+          [-6299 + 1887, -2190 + 3637],
+          [-6299 + 1887 + 740, -2190 + 3637 + 346]
+        ]
+      }
+    ],
+    [
+      "\u5927\u8D64\u6C99\u6D77-\u5E95\u56FE1",
+      {
+        imageUrl: `https://assets.yuanshen.site/overlay/SM/\u56FA\u5B9A\u5E95\u56FE1.png`,
+        imageBounds: [
+          [-7664 + 142, 540 + 1183],
+          [-7664 + 142 + 1119, 540 + 1183 + 1351]
+        ]
+      }
+    ],
+    [
+      "\u5927\u8D64\u6C99\u6D77-\u5E95\u56FE2",
+      {
+        imageUrl: `https://assets.yuanshen.site/overlay/SM/\u56FA\u5B9A\u5E95\u56FE2.png`,
+        imageBounds: [
+          [-7664 + 756, 540 + 2256],
+          [-7664 + 756 + 372, 540 + 2256 + 105]
+        ]
+      }
+    ],
+    [
+      "\u5927\u8D64\u6C99\u6D77-\u5E95\u56FE3",
+      {
+        imageUrl: `https://assets.yuanshen.site/overlay/SM/\u56FA\u5B9A\u5E95\u56FE3.png`,
+        imageBounds: [
+          [-7664 + 2062, 540 + 303],
+          [-7664 + 2062 + 152, 540 + 303 + 132]
+        ]
+      }
+    ],
+    [
+      "\u5927\u8D64\u6C99\u6D77-\u5E95\u56FE4",
+      {
+        imageUrl: `https://assets.yuanshen.site/overlay/SM/\u56FA\u5B9A\u5E95\u56FE4.png`,
+        imageBounds: [
+          [-7664 + 2072, 540 + 796],
+          [-7664 + 2072 + 160, 540 + 796 + 178]
+        ]
+      }
+    ],
+    [
+      "\u5927\u8D64\u6C99\u6D77-\u5E95\u56FE5",
+      {
+        imageUrl: `https://assets.yuanshen.site/overlay/SM/\u56FA\u5B9A\u5E95\u56FE5.png`,
+        imageBounds: [
+          [-7664 + 1948, 540 + 1483],
+          [-7664 + 1948 + 293, 540 + 1483 + 465]
+        ]
+      }
+    ],
+    [
+      "\u5927\u8D64\u6C99\u6D77-\u5E95\u56FE6",
+      {
+        imageUrl: `https://assets.yuanshen.site/overlay/SM/\u56FA\u5B9A\u5E95\u56FE6.png`,
+        imageBounds: [
+          [-7664 + 2254, 540 + 1370],
+          [-7664 + 2254 + 332, 540 + 1370 + 271]
+        ]
+      }
+    ],
+    [
+      "\u5927\u8D64\u6C99\u6D77-\u5E95\u56FE7",
+      {
+        imageUrl: `https://assets.yuanshen.site/overlay/SM/\u56FA\u5B9A\u5E95\u56FE7.png`,
+        imageBounds: [
+          [-7664 + 2708, 540 + 1656],
+          [-7664 + 2708 + 398, 540 + 1656 + 365]
+        ]
+      }
+    ],
+    [
+      "\u5927\u8D64\u6C99\u6D77-\u5E95\u56FE8",
+      {
+        imageUrl: `https://assets.yuanshen.site/overlay/SM/\u56FA\u5B9A\u5E95\u56FE8.png`,
+        imageBounds: [
+          [-7664 + 1608, 540 + 2316],
+          [-7664 + 1608 + 985, 540 + 2316 + 693]
+        ]
+      }
+    ]
+  ];
+  var underground2Maps = [
+    [
+      "\u79D8\u4EEA1",
+      [
+        [-7664 + 1108, 540 + 1682],
+        [-7664 + 1108 + 460, 540 + 1682 + 259]
+      ]
+    ],
+    [
+      "\u79D8\u4EEA2",
+      [
+        [-7664 + 1129, 540 + 1589],
+        [-7664 + 1129 + 279, 540 + 1589 + 325]
+      ]
+    ],
+    [
+      "\u79D8\u4EEA3",
+      [
+        [-7664 + 1149, 540 + 1629],
+        [-7664 + 1149 + 305, 540 + 1629 + 259]
+      ]
+    ],
+    [
+      "\u738B\u96751",
+      [
+        [-7664 + 729, 540 + 1729],
+        [-7664 + 729 + 124, 540 + 1729 + 85]
+      ]
+    ],
+    [
+      "\u738B\u96752",
+      [
+        [-7664 + 696, 540 + 1642],
+        [-7664 + 696 + 372, 540 + 1642 + 246]
+      ]
+    ],
+    [
+      "\u738B\u96753",
+      [
+        [-7664 + 721, 540 + 1702],
+        [-7664 + 721 + 187, 540 + 1702 + 166]
+      ]
+    ],
+    [
+      "\u820D\u8EAB1",
+      [
+        [-7664 + 2250, 540 + 1489],
+        [-7664 + 2250 + 356, 540 + 1489 + 432]
+      ]
+    ],
+    [
+      "\u820D\u8EAB2",
+      [
+        [-7664 + 2152, 540 + 1596],
+        [-7664 + 2152 + 312, 540 + 1596 + 398]
+      ]
+    ],
+    [
+      "\u820D\u8EAB3",
+      [
+        [-7664 + 2276, 540 + 1649],
+        [-7664 + 2276 + 324, 540 + 1649 + 332]
+      ]
+    ],
+    [
+      "\u5723\u663E1",
+      [
+        [-7664 + 1834, 540 + 509],
+        [-7664 + 1834 + 567, 540 + 509 + 212]
+      ]
+    ],
+    [
+      "\u5723\u663E2",
+      [
+        [-7664 + 1809, 540 + 502],
+        [-7664 + 1809 + 592, 540 + 502 + 226]
+      ]
+    ],
+    [
+      "\u5723\u663E3",
+      [
+        [-7664 + 1822, 540 + 509],
+        [-7664 + 1822 + 579, 540 + 509 + 219]
+      ]
+    ]
+  ];
+  var underground3Maps = [
+    [
+      "\u8D64\u738B\u7684\u6C34\u6676\u676F",
+      [
+        [-7043, -284],
+        [-7043 + 769, -284 + 902]
+      ]
+    ],
+    [
+      "\u6C38\u6052\u7EFF\u6D32",
+      [
+        [-6793, -125],
+        [-6793 + 698, -125 + 689]
+      ]
+    ],
+    [
+      "\u9163\u4E50\u4E4B\u6BBF4",
+      [
+        [-6904, -494],
+        [-6904 + 285, -494 + 279]
+      ]
+    ],
+    [
+      "\u9163\u4E50\u4E4B\u6BBF3",
+      [
+        [-6997, -496],
+        [-6997 + 347, -496 + 178]
+      ]
+    ],
+    [
+      "\u9163\u4E50\u4E4B\u6BBF2",
+      [
+        [-6882, -548],
+        [-6882 + 505, -548 + 514]
+      ]
+    ],
+    [
+      "\u9163\u4E50\u4E4B\u6BBF1",
+      [
+        [-6972, -455],
+        [-6972 + 270, -455 + 354]
+      ]
+    ],
+    [
+      "\u5C45\u5C14\u57CE\u589F\xB7\u8D64\u738B\u795E\u6BBF3",
+      [
+        [-7317, 1237],
+        [-7317 + 581, 1237 + 482]
+      ]
+    ],
+    [
+      "\u5C45\u5C14\u57CE\u589F\xB7\u8D64\u738B\u795E\u6BBF2",
+      [
+        [-6886, 1577],
+        [-6886 + 130, 1577 + 169]
+      ]
+    ],
+    [
+      "\u5C45\u5C14\u57CE\u589F\xB7\u8D64\u738B\u795E\u6BBF1",
+      [
+        [-7341, 1174],
+        [-7341 + 583, 1174 + 688]
+      ]
+    ],
+    [
+      "\u541B\u738B\u4E4B\u6BBF3",
+      [
+        [-6368, 145],
+        [-6368 + 435, 145 + 468]
+      ]
+    ],
+    [
+      "\u541B\u738B\u4E4B\u6BBF2",
+      [
+        [-6089, 139],
+        [-6089 + 222, 139 + 139]
+      ]
+    ],
+    [
+      "\u541B\u738B\u4E4B\u6BBF1",
+      [
+        [-6310, 138],
+        [-6310 + 442, 138 + 409]
+      ]
+    ],
+    [
+      "\u6C99\u866B\u96A7\u90533",
+      [
+        [-5490, -25],
+        [-5490 + 180, -25 + 290]
+      ]
+    ],
+    [
+      "\u6C99\u866B\u96A7\u90532",
+      [
+        [-5517, -19],
+        [-5517 + 275, -19 + 506]
+      ]
+    ],
+    [
+      "\u6C99\u866B\u96A7\u90531",
+      [
+        [-5914, -61],
+        [-5914 + 682, -61 + 814]
+      ]
+    ],
+    [
+      "\u751F\u547D\u4E4B\u6BBF",
+      [
+        [-7612, 2],
+        [-7612 + 643, 2 + 588]
+      ]
+    ],
+    [
+      "\u4E94\u7EFF\u6D32",
+      [
+        [-6171, -730],
+        [-6171 + 643, -730 + 390]
+      ]
+    ],
+    [
+      "\u884C\u5BAB\u82B1\u56ED",
+      [
+        [-7219, -785],
+        [-7219 + 507, -785 + 522]
+      ]
+    ],
+    [
+      "\u9547\u7075\u76D1\u7262\u53CA\u5DE8\u4EBA\u5CE1\u8C37",
+      [
+        [-7186, 502],
+        [-7186 + 788, 502 + 510]
+      ]
+    ]
+  ];
+
+  // example/index.ts
   async function main() {
+    const size = [17408, 16384];
+    const origin = [3568, 6286];
     const tileOffset = [-5120, 0];
     const tilemap = new Tilemap({
       element: "#tilemap",
-      size: [17408, 16384],
-      origin: [3568, 6286],
-      maxZoom: 0.5,
-      tileOffset
-      // 渊下宫
-      // size: [12288, 12288],
-      // origin: [3568, 6286],
+      size,
+      tileOffset,
+      origin,
+      maxZoom: 0.5
     });
     tilemap.tileLayers.add(
       new TileLayer(tilemap, {
@@ -3502,8 +3956,7 @@ Please add \`${key}Action\` when creating your handler.`);
         maxZoom: 13,
         getTileUrl(x, y, z) {
           return `https://assets.yuanshen.site/tiles_twt34/${z}/${x}_${y}.png`;
-        },
-        dx: 1024
+        }
       })
       // 渊下宫
       // new TileLayer(tilemap, {
@@ -3522,8 +3975,11 @@ Please add \`${key}Action\` when creating your handler.`);
     for (const i of record) {
       icons[i.name] = i.url;
     }
-    await addMarker(126);
-    await addMarker(159);
+    addMarker(126);
+    addMarker(1242);
+    addMarker(1561);
+    addMarker(97);
+    addMarker(159);
     const activeMarkerLayer = new MarkerLayer(tilemap, {
       positions: [],
       image: new Image()
@@ -3592,21 +4048,58 @@ Please add \`${key}Action\` when creating your handler.`);
         canvas2d.arc(radius, radius, radius, 0, 2 * Math.PI);
         canvas2d.fillStyle = "rgba(255, 255, 255, 0.5)";
         canvas2d.fill();
-        let size = [
+        let size2 = [
           image.width * devicePixelRatio,
           image.height * devicePixelRatio
         ];
         if (image.width > image.height) {
-          size = [iconSize, size[1] * iconSize / size[0]];
+          size2 = [iconSize, size2[1] * iconSize / size2[0]];
         } else {
-          size = [size[0] * iconSize / size[1], iconSize];
+          size2 = [size2[0] * iconSize / size2[1], iconSize];
         }
-        const x = (iconSize - size[0]) / 2;
-        const y = (iconSize - size[1]) / 2;
-        canvas2d.drawImage(image, x, y, size[0], size[1]);
+        const x = (iconSize - size2[0]) / 2;
+        const y = (iconSize - size2[1]) / 2;
+        canvas2d.drawImage(image, x, y, size2[0], size2[1]);
         tilemap.draw();
       });
       return canvas;
+    }
+    function enableUndergroundMaps() {
+      const canvas = document.createElement("canvas");
+      const canvas2d = canvas.getContext("2d");
+      canvas2d.fillStyle = "rgba(0, 0, 0, 0.68)";
+      canvas2d.rect(0, 0, canvas.width, canvas.height);
+      canvas2d.fill();
+      tilemap.imageLayers.add(
+        new ImageLayer(tilemap, {
+          image: canvas,
+          bounds: [
+            [-origin[0] + tileOffset[0], -origin[1] + tileOffset[1]],
+            size
+          ]
+        })
+      );
+      for (const [_, { imageUrl, imageBounds }] of undergroundMaps) {
+        addImageLayer(imageUrl, imageBounds);
+      }
+      for (const [image, bounds] of underground2Maps) {
+        addImageLayer(
+          `https://assets.yuanshen.site/overlay/SM/${image}.png`,
+          bounds
+        );
+      }
+      for (const [image, bounds] of underground3Maps) {
+        addImageLayer(
+          `https://assets.yuanshen.site/overlay/${image}.png`,
+          bounds
+        );
+      }
+    }
+    function addImageLayer(url, bounds) {
+      const image = new Image();
+      image.src = url;
+      image.addEventListener("load", () => tilemap.draw());
+      tilemap.imageLayers.add(new ImageLayer(tilemap, { image, bounds }));
     }
   }
   main();
