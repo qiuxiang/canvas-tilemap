@@ -3289,10 +3289,10 @@ Please add \`${key}Action\` when creating your handler.`);
       const now = Date.now();
       if (now != this.lastDrawTime) {
         requestAnimationFrame(() => {
-          const { canvas2d: canvas, canvas: element, offset } = this;
-          canvas.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
-          canvas.clearRect(0, 0, element.width, element.height);
-          canvas.translate(offset[0], offset[1]);
+          const { canvas2d, canvas, offset } = this;
+          canvas2d.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+          canvas2d.clearRect(0, 0, canvas.width, canvas.height);
+          canvas2d.translate(offset[0], offset[1]);
           for (const layer of this.tileLayers) {
             layer.draw();
           }
@@ -3485,13 +3485,13 @@ Please add \`${key}Action\` when creating your handler.`);
     accessToken = (await response.json())["access_token"];
   }
   async function main() {
-    const mapOffset = [-5120, 0];
+    const tileOffset = [-5120, 0];
     const tilemap = new Tilemap({
       element: "#tilemap",
       size: [17408, 16384],
       origin: [3568, 6286],
       maxZoom: 0.5,
-      tileOffset: mapOffset
+      tileOffset
       // 渊下宫
       // size: [12288, 12288],
       // origin: [3568, 6286],
