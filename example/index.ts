@@ -38,6 +38,7 @@ async function main() {
   );
 
   // enableUndergroundMaps();
+  // return;
 
   await fetchAccessToken();
   const { record } = await api("icon/get/list", { size: 1000 });
@@ -53,6 +54,10 @@ async function main() {
   addMarker(1561);
   addMarker(97);
   addMarker(159);
+  // addMarker(120);
+  // addMarker(122);
+  // addMarker(204);
+  // addMarker(206);
 
   // 渊下宫点位
   // addMarker(660);
@@ -151,7 +156,9 @@ async function main() {
     return canvas;
   }
 
-  function enableUndergroundMaps() {
+  async function enableUndergroundMaps() {
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
     const canvas = document.createElement("canvas");
     const canvas2d = canvas.getContext("2d")!;
     canvas2d.fillStyle = "rgba(0, 0, 0, 0.68)";
@@ -189,8 +196,10 @@ async function main() {
   function addImageLayer(url: string, bounds: ImageBounds) {
     const image = new Image();
     image.src = url;
-    image.addEventListener("load", () => tilemap.draw());
-    tilemap.imageLayers.add(new ImageLayer(tilemap, { image, bounds }));
+    image.addEventListener("load", () => {
+      tilemap.imageLayers.add(new ImageLayer(tilemap, { image, bounds }));
+      tilemap.draw();
+    });
   }
 }
 

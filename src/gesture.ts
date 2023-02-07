@@ -1,8 +1,4 @@
-import {
-  FullGestureState,
-  Gesture as UseGesture,
-  SharedGestureState,
-} from "@use-gesture/vanilla";
+import { FullGestureState, Gesture as UseGesture } from "@use-gesture/vanilla";
 import { inertia } from "popmotion";
 import { Tilemap } from ".";
 
@@ -42,8 +38,7 @@ export class Gesture {
 
   scaleAnimation = inertia({});
   offsetAnimation = [inertia({}), inertia({})];
-  velocityX = new Average();
-  velocityY = new Average();
+  velocity = [new Average(), new Average()];
   velocityScale = new Average();
 
   constructor(map: Tilemap) {
@@ -111,8 +106,8 @@ export class Gesture {
     this.offsetAnimation[0]?.stop();
     this.offsetAnimation[1]?.stop();
     this.scaleAnimation?.stop();
-    this.velocityX.clear();
-    this.velocityY.clear();
+    this.velocity[0].clear();
+    this.velocity[1].clear();
   }
 
   onDrag(state: FullGestureState<"drag">) {
@@ -121,11 +116,12 @@ export class Gesture {
       return;
     }
 
-    this.velocityX.add(velocity[0]);
-    this.velocityY.add(velocity[1]);
-    this.setOffset(0, this.map.offset[0] + delta[0]);
-    this.setOffset(1, this.map.offset[1] + delta[1]);
-    this.map.draw();
+    this.velocity[0].add(velocity[0]);
+    this.velocity[1].add(velocity[1]);
+    this.setOffset([
+      this.map.offset[0] + delta[0],
+      this.map.offset[1] + delta[1],
+    ]);
   }
 
   async onDragEnd(state: FullGestureState<"drag">) {
@@ -133,23 +129,21 @@ export class Gesture {
     if (timeStamp - this.lastPinchTime < 200) return;
 
     const initialOffset = [...this.map.offset];
-    const velocity = [this.velocityX.value, this.velocityY.value];
-    const animateOffset = (index: number) => {
-      this.offsetAnimation[index] = inertia({
-        velocity: velocity[index],
+    const velocity = [this.velocity[0].value, this.velocity[1].value];
+    const v = Math.sqrt(velocity[0] ** 2 + velocity[1] ** 2);
+    if (v != 0) {
+      this.offsetAnimation[0] = inertia({
+        velocity: v,
         power: 200,
         timeConstant: 200,
         onUpdate: (value) => {
-          this.setOffset(
-            index,
-            initialOffset[index] + direction[index] * value
-          );
-          this.map.draw();
+          this.setOffset([
+            initialOffset[0] + direction[0] * value * (velocity[0] / v),
+            initialOffset[1] + direction[1] * value * (velocity[1] / v),
+          ]);
         },
       });
-    };
-    animateOffset(0);
-    animateOffset(1);
+    }
     if (distance[0] > 2 || distance[1] > 2) {
       this.lastDragTime = timeStamp;
     }
@@ -192,7 +186,7 @@ export class Gesture {
     this.map.options.onClick?.();
   }
 
-  getNewScale(newScale: number) {
+  limitScale(newScale: number) {
     const { minZoom, options } = this.map;
     let zoom = Math.log2(newScale);
     zoom = Math.max(Math.min(zoom, options.maxZoom!), minZoom);
@@ -201,17 +195,23 @@ export class Gesture {
 
   scaleTo(newScale: number, origin: [number, number]) {
     const { offset, scale } = this.map;
-    newScale = this.getNewScale(newScale);
+    newScale = this.limitScale(newScale);
     const ratio = (newScale - scale) / scale;
     this.map.scale = newScale;
-    this.setOffset(0, offset[0] - (origin[0] - offset[0]) * ratio);
-    this.setOffset(1, offset[1] - (origin[1] - offset[1]) * ratio);
-    this.map.draw();
+    this.setOffset([
+      offset[0] - (origin[0] - offset[0]) * ratio,
+      offset[1] - (origin[1] - offset[1]) * ratio,
+    ]);
   }
 
-  setOffset(index: number, value: number) {
+  setOffset(value: [number, number]) {
     const { size, options, offset, scale } = this.map;
-    const maxValue = size[index] - options.size[index] * scale;
-    offset[index] = Math.min(Math.max(value, maxValue), 0);
+    const max = [
+      size[0] - options.size[0] * scale,
+      size[1] - options.size[1] * scale,
+    ];
+    offset[0] = Math.min(Math.max(value[0], max[0]), 0);
+    offset[1] = Math.min(Math.max(value[1], max[1]), 0);
+    this.map.draw();
   }
 }

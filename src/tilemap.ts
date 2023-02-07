@@ -115,7 +115,7 @@ export class Tilemap {
       size[0] /= devicePixelRatio;
       size[1] /= devicePixelRatio;
       for (let index = positions.length - 1; index >= 0; index -= 1) {
-        let [x, y] = this.toPointPosition(positions[index]);
+        let [x, y] = this.toCanvasPositionWithOffset(positions[index]);
         const centerOffset = [size[0] * anchor![0], size[1] * anchor![1]];
         if (
           point[0] > x - centerOffset[0] &&
@@ -129,13 +129,32 @@ export class Tilemap {
     }
   }
 
-  toPointPosition([x, y]: [number, number]) {
-    const { scale, offset } = this;
+  toCanvasPositionWithOffset(position: [number, number]) {
+    const { offset } = this;
+    let [x, y] = this.toCanvasPosition(position);
+    return [x + offset[0], y + offset[1]];
+  }
+
+  toCanvasPosition([x, y]: [number, number]) {
+    const [px, py] = this.mapPointOffset;
+    return [(x + px) * this.scale, (y + py) * this.scale];
+  }
+
+  overlaps(position: [number, number], size: [number, number]) {
+    if (
+      position[0] + size[0] > -this.offset[0] &&
+      position[0] < this.size[0] - this.offset[0] &&
+      position[1] + size[1] > -this.offset[1] &&
+      position[1] < this.size[1] - this.offset[1]
+    ) {
+      return true;
+    }
+    return false;
+  }
+
+  get mapPointOffset() {
     const { origin, tileOffset } = this.options;
-    return [
-      (x + origin[0] - tileOffset![0]) * scale + offset[0],
-      (y + origin[1] - tileOffset![1]) * scale + offset[1],
-    ];
+    return [origin[0] - tileOffset![0], origin[1] - tileOffset![1]];
   }
 
   resize(width: number, height: number) {
@@ -151,12 +170,12 @@ export class Tilemap {
     const minZoom = Math.log2(minScale);
     if (!this.scale) {
       this.minZoom = minZoom;
-      this.scale = this.gesture.getNewScale(minScale);
+      this.scale = this.gesture.limitScale(minScale);
+      this.draw();
     } else if (this.minZoom != minZoom) {
       this.minZoom = minZoom;
       this.gesture.scaleTo(this.scale, [this.size[0] / 2, this.size[1] / 2]);
     }
-    this.draw();
   }
 
   draw() {

@@ -36,7 +36,7 @@ export class DomLayer extends Layer {
   }
 
   draw() {
-    const [x, y] = this.map.toPointPosition(this.options.position);
+    const [x, y] = this.map.toCanvasPositionWithOffset(this.options.position);
     this.element.style.transform = `translate(${x}px, ${y}px)`;
   }
 }
