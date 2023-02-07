@@ -20,20 +20,20 @@ export class MarkerLayer extends Layer {
 
   draw() {
     const { positions, image, anchor } = this.options;
-    const { canvas2d, scale, options } = this.map;
-    const size = [image.width as number, image.height as number];
+    const { canvas2d } = this.map;
+    const size: [number, number] = [
+      image.width as number,
+      image.height as number,
+    ];
     size[0] /= devicePixelRatio;
     size[1] /= devicePixelRatio;
     for (const i of positions) {
-      const x = options.origin[0] - options.tileOffset![0] + i[0];
-      const y = options.origin[1] - options.tileOffset![1] + i[1];
-      canvas2d.drawImage(
-        image,
-        x * scale - size[0] * anchor![0],
-        y * scale - size[1] * anchor![1],
-        size[0],
-        size[1]
-      );
+      let [x, y] = this.map.toCanvasPosition(i);
+      x -= size[0] * anchor![0];
+      y -= size[1] * anchor![1];
+      if (this.map.overlaps([x, y], size)) {
+        canvas2d.drawImage(image, x, y, size[0], size[1]);
+      }
     }
   }
 }
