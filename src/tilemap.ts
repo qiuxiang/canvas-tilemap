@@ -8,7 +8,7 @@ export interface TilemapOptions {
   /**
    * canvas element
    */
-  element: string | HTMLCanvasElement;
+  element: string | HTMLElement;
 
   /**
    * map original size
@@ -154,7 +154,7 @@ export class Tilemap {
 
   get mapPointOffset() {
     const { origin, tileOffset } = this.options;
-    return [origin[0] - tileOffset![0], origin[1] - tileOffset![1]];
+    return [origin[0] + tileOffset![0], origin[1] + tileOffset![1]];
   }
 
   resize(width: number, height: number) {
