@@ -9,7 +9,7 @@ async function main() {
   // const origin: [number, number] = [3568, 6286],
   const size: [number, number] = [17408, 16384];
   const origin: [number, number] = [3568, 6286];
-  const tileOffset: [number, number] = [5120, 0];
+  const tileOffset: [number, number] = [-5120, 0];
   const tilemap = new Tilemap({
     element: "#tilemap",
     size,
