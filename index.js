@@ -3279,7 +3279,7 @@ Please add \`${key}Action\` when creating your handler.`);
     }
     get mapPointOffset() {
       const { origin, tileOffset } = this.options;
-      return [origin[0] + tileOffset[0], origin[1] + tileOffset[1]];
+      return [origin[0] - tileOffset[0], origin[1] - tileOffset[1]];
     }
     resize(width, height) {
       this.canvas.width = width * devicePixelRatio;
@@ -3982,7 +3982,7 @@ Please add \`${key}Action\` when creating your handler.`);
   async function main() {
     const size = [17408, 16384];
     const origin = [3568, 6286];
-    const tileOffset = [5120, 0];
+    const tileOffset = [-5120, 0];
     const tilemap = new Tilemap({
       element: "#tilemap",
       size,
