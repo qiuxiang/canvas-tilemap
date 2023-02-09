@@ -1,6 +1,6 @@
 import { Layer, Tilemap } from "./tilemap";
 
-interface MarkerItem<T> {
+export interface MarkerItem<T> {
   x: number;
   y: number;
   data: T;
