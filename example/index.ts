@@ -43,7 +43,6 @@ async function main() {
   await fetchAccessToken();
   const { record } = await api("icon/get/list", { size: 1000 });
   const iconSize = 32 * devicePixelRatio;
-  const markersMap = new Map<MarkerLayer, any[]>();
   const icons: Record<string, string> = {};
   for (const i of record) {
     icons[i.name] = i.url;
@@ -64,7 +63,7 @@ async function main() {
   // addMarker(627);
 
   const activeMarkerLayer = new MarkerLayer(tilemap, {
-    positions: [],
+    items: [],
     image: new Image(),
   });
 
@@ -74,26 +73,26 @@ async function main() {
       const { target, index } = event;
       if (target == activeMarkerLayer) return;
 
-      const { image, positions } = target.options;
+      const { image, items } = target.options;
+      const item = items[index];
       tilemap.markerLayers.add(activeMarkerLayer);
-      activeMarkerLayer.options.positions[0] = positions[index];
+      activeMarkerLayer.options.items[0] = item;
       activeMarkerLayer.options.image = createActiveMarkerImage(
         image as HTMLCanvasElement
       );
 
-      const marker = markersMap.get(target)![index];
       const markerElement = document.createElement("div");
       markerElement.className = "marker";
       markerElement.innerHTML = `
-        <div class="marker-title">${marker.markerTitle}</div>
-        <div class="marker-content">${marker.content}</div>
-        ${marker.picture ? `<img src="${marker.picture}">` : ""}
+        <div class="marker-title">${item.data.markerTitle}</div>
+        <div class="marker-content">${item.data.content}</div>
+        ${item.data.picture ? `<img src="${item.data.picture}">` : ""}
       `;
       tilemap.domLayers.clear();
       tilemap.domLayers.add(
         new DomLayer(tilemap, {
           element: markerElement,
-          position: positions[index],
+          position: [item.x, item.y],
         })
       );
       tilemap.draw();
@@ -107,12 +106,12 @@ async function main() {
   async function addMarker(id: number) {
     const markers = await api("marker/get/list_byinfo", { itemIdList: [id] });
     const markerLayer = new MarkerLayer(tilemap, {
-      positions: markers.map((i: any) =>
-        i.position.split(",").map((i: string) => parseInt(i))
-      ),
+      items: markers.map((i: any) => {
+        const [x, y] = i.position.split(",").map((i: string) => parseInt(i));
+        return { x, y, data: i };
+      }),
       image: createMarkerImage(icons[markers[0].itemList[0].iconTag]),
     });
-    markersMap.set(markerLayer, markers);
     tilemap.markerLayers.add(markerLayer);
   }
 

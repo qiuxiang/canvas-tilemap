@@ -110,12 +110,15 @@ export class Tilemap {
   findMarker(point: [number, number]): [MarkerLayer, number] | undefined {
     const markerLayers = Array.from(this.markerLayers).reverse();
     for (const marker of markerLayers) {
-      const { image, positions, anchor } = marker.options;
+      const { image, items, anchor } = marker.options;
       const size = [image.width as number, image.height as number];
       size[0] /= devicePixelRatio;
       size[1] /= devicePixelRatio;
-      for (let index = positions.length - 1; index >= 0; index -= 1) {
-        let [x, y] = this.toCanvasPositionWithOffset(positions[index]);
+      for (let index = items.length - 1; index >= 0; index -= 1) {
+        let [x, y] = this.toCanvasPositionWithOffset([
+          items[index].x,
+          items[index].y,
+        ]);
         const centerOffset = [size[0] * anchor![0], size[1] * anchor![1]];
         if (
           point[0] > x - centerOffset[0] &&

@@ -1,25 +1,31 @@
 import { Layer, Tilemap } from "./tilemap";
 
-export interface MarkerLayerOptions {
-  positions: [number, number][];
+interface MarkerItem<T> {
+  x: number;
+  y: number;
+  data: T;
+}
+
+export interface MarkerLayerOptions<T> {
+  items: MarkerItem<T>[];
   image: CanvasImageSource;
   anchor?: [number, number];
   onClick?: (index: number) => void;
   onMouseMove?: (index: number) => void;
 }
 
-export class MarkerLayer extends Layer {
+export class MarkerLayer<T = any> extends Layer {
   map: Tilemap;
-  options: MarkerLayerOptions;
+  options: MarkerLayerOptions<T>;
 
-  constructor(map: Tilemap, options: MarkerLayerOptions) {
+  constructor(map: Tilemap, options: MarkerLayerOptions<T>) {
     super();
     this.map = map;
     this.options = { ...options, anchor: options.anchor ?? [0.5, 1] };
   }
 
   draw() {
-    const { positions, image, anchor } = this.options;
+    const { items, image, anchor } = this.options;
     const { canvas2d } = this.map;
     const size: [number, number] = [
       image.width as number,
@@ -27,8 +33,8 @@ export class MarkerLayer extends Layer {
     ];
     size[0] /= devicePixelRatio;
     size[1] /= devicePixelRatio;
-    for (const i of positions) {
-      let [x, y] = this.map.toCanvasPosition(i);
+    for (const i of items) {
+      let [x, y] = this.map.toCanvasPosition([i.x, i.y]);
       x -= size[0] * anchor![0];
       y -= size[1] * anchor![1];
       if (this.map.overlaps([x, y], size)) {
