@@ -48,6 +48,7 @@ export class TileLayer extends Layer {
     for (const tiles of this.tiles[minZoom]) {
       for (const url of tiles) {
         const image = new Image();
+        image.crossOrigin = "anonymous";
         image.src = url;
         image.addEventListener("load", () => {
           this.images[url] = image;
@@ -93,6 +94,7 @@ export class TileLayer extends Layer {
           );
         } else {
           const image = new Image();
+          image.crossOrigin = "anonymous";
           image.src = url;
           image.addEventListener("load", () => {
             this.images[url] = image;

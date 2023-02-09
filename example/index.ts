@@ -128,6 +128,7 @@ async function main() {
     const canvas = document.createElement("canvas");
     const canvas2d = canvas.getContext("2d")!;
     const image = new Image();
+    image.crossOrigin = "anonymous";
     image.src = url;
     image.addEventListener("load", () => {
       canvas.width = iconSize;
@@ -194,6 +195,7 @@ async function main() {
 
   function addImageLayer(url: string, bounds: ImageBounds) {
     const image = new Image();
+    image.crossOrigin = "anonymous";
     image.src = url;
     image.addEventListener("load", () => {
       tilemap.imageLayers.add(new ImageLayer(tilemap, { image, bounds }));
