@@ -3249,12 +3249,15 @@ Please add \`${key}Action\` when creating your handler.`);
     findMarker(point) {
       const markerLayers = Array.from(this.markerLayers).reverse();
       for (const marker of markerLayers) {
-        const { image, positions, anchor } = marker.options;
+        const { image, items, anchor } = marker.options;
         const size = [image.width, image.height];
         size[0] /= devicePixelRatio;
         size[1] /= devicePixelRatio;
-        for (let index = positions.length - 1; index >= 0; index -= 1) {
-          let [x, y] = this.toCanvasPositionWithOffset(positions[index]);
+        for (let index = items.length - 1; index >= 0; index -= 1) {
+          let [x, y] = this.toCanvasPositionWithOffset([
+            items[index].x,
+            items[index].y
+          ]);
           const centerOffset = [size[0] * anchor[0], size[1] * anchor[1]];
           if (point[0] > x - centerOffset[0] && point[0] < x + (size[0] - centerOffset[0]) && point[1] > y - centerOffset[1] && point[1] < y + (size[0] - centerOffset[0])) {
             return [marker, index];
@@ -3368,6 +3371,7 @@ Please add \`${key}Action\` when creating your handler.`);
       for (const tiles of this.tiles[minZoom]) {
         for (const url of tiles) {
           const image = new Image();
+          image.crossOrigin = "anonymous";
           image.src = url;
           image.addEventListener("load", () => {
             this.images[url] = image;
@@ -3409,6 +3413,7 @@ Please add \`${key}Action\` when creating your handler.`);
             );
           } else {
             const image2 = new Image();
+            image2.crossOrigin = "anonymous";
             image2.src = url;
             image2.addEventListener("load", () => {
               this.images[url] = image2;
@@ -3429,7 +3434,7 @@ Please add \`${key}Action\` when creating your handler.`);
       this.options = { ...options, anchor: options.anchor ?? [0.5, 1] };
     }
     draw() {
-      const { positions, image, anchor } = this.options;
+      const { items, image, anchor } = this.options;
       const { canvas2d } = this.map;
       const size = [
         image.width,
@@ -3437,8 +3442,8 @@ Please add \`${key}Action\` when creating your handler.`);
       ];
       size[0] /= devicePixelRatio;
       size[1] /= devicePixelRatio;
-      for (const i of positions) {
-        let [x, y] = this.map.toCanvasPosition(i);
+      for (const i of items) {
+        let [x, y] = this.map.toCanvasPosition([i.x, i.y]);
         x -= size[0] * anchor[0];
         y -= size[1] * anchor[1];
         if (this.map.overlaps([x, y], size)) {
@@ -4010,7 +4015,6 @@ Please add \`${key}Action\` when creating your handler.`);
     await fetchAccessToken();
     const { record } = await api("icon/get/list", { size: 1e3 });
     const iconSize = 32 * devicePixelRatio;
-    const markersMap = /* @__PURE__ */ new Map();
     const icons = {};
     for (const i of record) {
       icons[i.name] = i.url;
@@ -4021,7 +4025,7 @@ Please add \`${key}Action\` when creating your handler.`);
     addMarker(97);
     addMarker(159);
     const activeMarkerLayer = new MarkerLayer(tilemap, {
-      positions: [],
+      items: [],
       image: new Image()
     });
     tilemap.options.onClick = (event) => {
@@ -4029,25 +4033,25 @@ Please add \`${key}Action\` when creating your handler.`);
         const { target, index } = event;
         if (target == activeMarkerLayer)
           return;
-        const { image, positions } = target.options;
+        const { image, items } = target.options;
+        const item = items[index];
         tilemap.markerLayers.add(activeMarkerLayer);
-        activeMarkerLayer.options.positions[0] = positions[index];
+        activeMarkerLayer.options.items[0] = item;
         activeMarkerLayer.options.image = createActiveMarkerImage(
           image
         );
-        const marker = markersMap.get(target)[index];
         const markerElement = document.createElement("div");
         markerElement.className = "marker";
         markerElement.innerHTML = `
-        <div class="marker-title">${marker.markerTitle}</div>
-        <div class="marker-content">${marker.content}</div>
-        ${marker.picture ? `<img src="${marker.picture}">` : ""}
+        <div class="marker-title">${item.data.markerTitle}</div>
+        <div class="marker-content">${item.data.content}</div>
+        ${item.data.picture ? `<img src="${item.data.picture}">` : ""}
       `;
         tilemap.domLayers.clear();
         tilemap.domLayers.add(
           new DomLayer(tilemap, {
             element: markerElement,
-            position: positions[index]
+            position: [item.x, item.y]
           })
         );
         tilemap.draw();
@@ -4060,12 +4064,12 @@ Please add \`${key}Action\` when creating your handler.`);
     async function addMarker(id) {
       const markers = await api("marker/get/list_byinfo", { itemIdList: [id] });
       const markerLayer = new MarkerLayer(tilemap, {
-        positions: markers.map(
-          (i) => i.position.split(",").map((i2) => parseInt(i2))
-        ),
+        items: markers.map((i) => {
+          const [x, y] = i.position.split(",").map((i2) => parseInt(i2));
+          return { x, y, data: i };
+        }),
         image: createMarkerImage(icons[markers[0].itemList[0].iconTag])
       });
-      markersMap.set(markerLayer, markers);
       tilemap.markerLayers.add(markerLayer);
     }
     function createActiveMarkerImage(image) {
@@ -4080,6 +4084,7 @@ Please add \`${key}Action\` when creating your handler.`);
       const canvas = document.createElement("canvas");
       const canvas2d = canvas.getContext("2d");
       const image = new Image();
+      image.crossOrigin = "anonymous";
       image.src = url;
       image.addEventListener("load", () => {
         canvas.width = iconSize;
@@ -4138,6 +4143,7 @@ Please add \`${key}Action\` when creating your handler.`);
     }
     function addImageLayer(url, bounds) {
       const image = new Image();
+      image.crossOrigin = "anonymous";
       image.src = url;
       image.addEventListener("load", () => {
         tilemap.imageLayers.add(new ImageLayer(tilemap, { image, bounds }));
