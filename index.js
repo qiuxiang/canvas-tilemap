@@ -3302,6 +3302,8 @@ Please add \`${key}Action\` when creating your handler.`);
       } else if (this.minZoom != minZoom) {
         this.minZoom = minZoom;
         this.gesture.scaleTo(this.scale, [this.size[0] / 2, this.size[1] / 2]);
+      } else {
+        this.draw();
       }
     }
     draw() {
