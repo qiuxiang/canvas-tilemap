@@ -16,7 +16,7 @@ export interface MarkerLayerOptions<T> {
   /**
    * default: true
    */
-  clickable: boolean;
+  clickable?: boolean;
 }
 
 export class MarkerLayer<T = any> extends Layer {
