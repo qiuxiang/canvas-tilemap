@@ -109,7 +109,7 @@ export class Tilemap {
 
   findMarker(point: [number, number]): [MarkerLayer, number] | undefined {
     const markerLayers = Array.from(this.markerLayers).reverse();
-    for (const marker of markerLayers) {
+    for (const marker of markerLayers.filter((i) => i.options.clickable)) {
       const { image, items, anchor } = marker.options;
       const size = [image.width as number, image.height as number];
       size[0] /= devicePixelRatio;

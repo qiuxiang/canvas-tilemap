@@ -1,9 +1,9 @@
 import { Layer, Tilemap } from "./tilemap";
 
-export interface MarkerItem<T> {
+export interface MarkerItem<T = any> {
   x: number;
   y: number;
-  data: T;
+  data?: T;
 }
 
 export interface MarkerLayerOptions<T> {
@@ -12,6 +12,11 @@ export interface MarkerLayerOptions<T> {
   anchor?: [number, number];
   onClick?: (index: number) => void;
   onMouseMove?: (index: number) => void;
+
+  /**
+   * default: true
+   */
+  clickable: boolean;
 }
 
 export class MarkerLayer<T = any> extends Layer {
@@ -21,7 +26,11 @@ export class MarkerLayer<T = any> extends Layer {
   constructor(map: Tilemap, options: MarkerLayerOptions<T>) {
     super();
     this.map = map;
-    this.options = { ...options, anchor: options.anchor ?? [0.5, 1] };
+    this.options = {
+      ...options,
+      anchor: options.anchor ?? [0.5, 1],
+      clickable: options.clickable ?? true,
+    };
   }
 
   draw() {

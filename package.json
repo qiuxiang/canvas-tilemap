@@ -1,7 +1,11 @@
 {
   "name": "@7c00/canvas-tilemap",
   "description": "smooth tilemap uses canvas render",
-  "keywords": ["canvas", "tilemap", "maps"],
+  "keywords": [
+    "canvas",
+    "tilemap",
+    "maps"
+  ],
   "main": "src",
   "author": "7c00 <i@7c00.cc>",
   "license": "MIT",
@@ -10,7 +14,8 @@
     "url": "https://github.com/qiuxiang/canvas-tilemap.git"
   },
   "scripts": {
-    "build": "esbuild example/index.ts --bundle --outdir=dist"
+    "build": "esbuild example/index.ts --bundle --minify --outdir=dist",
+    "dev": "npm run build -- --watch --sourcemap"
   },
   "dependencies": {
     "@use-gesture/vanilla": "^10.2.24",
