@@ -27,6 +27,7 @@ export interface TilemapOptions {
 
   onClick?: (event?: MarkerEvent) => void;
   onMouseMove?: (event?: MarkerEvent) => void;
+  onMove?: () => void;
   tileOffset?: [number, number];
 }
 

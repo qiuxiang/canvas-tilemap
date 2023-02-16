@@ -213,5 +213,6 @@ export class Gesture {
     offset[0] = Math.min(Math.max(value[0], max[0]), 0);
     offset[1] = Math.min(Math.max(value[1], max[1]), 0);
     this.map.draw();
+    this.map.options.onMove?.();
   }
 }
