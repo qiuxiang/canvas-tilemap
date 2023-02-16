@@ -24,8 +24,6 @@ export class DomLayer extends Layer {
         event.stopPropagation();
       }
     });
-    this.map.element.appendChild(this.element);
-    this.draw();
 
     const resizeObserver = new ResizeObserver(([entry]) => {
       const { blockSize, inlineSize } = entry.borderBoxSize[0];

@@ -19,6 +19,11 @@ export interface MarkerLayerOptions<T> {
   clickable?: boolean;
 }
 
+export interface MarkerEvent<T = any> {
+  target: MarkerLayer<T>;
+  index: number;
+}
+
 export class MarkerLayer<T = any> extends Layer {
   map: Tilemap;
   options: MarkerLayerOptions<T>;

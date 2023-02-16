@@ -1,6 +1,6 @@
 import { TileLayer } from "./tile-layer";
 import { Gesture } from "./gesture";
-import { MarkerLayer } from "./marker-layer";
+import { MarkerEvent, MarkerLayer } from "./marker-layer";
 import { DomLayer } from "./dom-layer";
 import { ImageLayer } from "./image-layer";
 
@@ -28,11 +28,6 @@ export interface TilemapOptions {
   onClick?: (event?: MarkerEvent) => void;
   onMouseMove?: (event?: MarkerEvent) => void;
   tileOffset?: [number, number];
-}
-
-export interface MarkerEvent {
-  target: MarkerLayer;
-  index: number;
 }
 
 export abstract class Layer {
@@ -102,6 +97,14 @@ export class Tilemap {
     this.domLayers.delete = new Proxy(this.domLayers.delete, {
       apply: (target, thisArg: Set<DomLayer>, argArray: [DomLayer]) => {
         this.element.removeChild(argArray[0].element);
+        return target.apply(thisArg, argArray);
+      },
+    });
+
+    this.domLayers.add = new Proxy(this.domLayers.add, {
+      apply: (target, thisArg: Set<DomLayer>, argArray: [DomLayer]) => {
+        this.element.appendChild(argArray[0].element);
+        this.draw();
         return target.apply(thisArg, argArray);
       },
     });

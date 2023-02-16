@@ -15,7 +15,7 @@
   },
   "scripts": {
     "build": "esbuild example/index.ts --bundle --minify --outdir=dist",
-    "dev": "npm run build -- --watch --sourcemap"
+    "dev": "npm run build -- --watch --sourcemap --servedir=dist"
   },
   "dependencies": {
     "@use-gesture/vanilla": "^10.2.24",
