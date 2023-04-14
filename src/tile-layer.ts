@@ -1,5 +1,6 @@
 import { Layer, Tilemap } from ".";
 import { safeCeil } from "./utils";
+import { AsyncPriorityQueue, queue } from "async";
 
 export interface TileLayerOptions {
   minZoom: number;
@@ -10,6 +11,7 @@ export interface TileLayerOptions {
    * default: 256
    */
   tileSize?: number;
+  crossOrigin?: string;
 }
 
 export class TileLayer extends Layer {
@@ -17,6 +19,7 @@ export class TileLayer extends Layer {
   options: TileLayerOptions;
   tiles: Record<number, string[][]> = {};
   images: Record<string, HTMLImageElement> = {};
+  queue: AsyncPriorityQueue<string>;
 
   constructor(map: Tilemap, options: TileLayerOptions) {
     super();
@@ -45,17 +48,28 @@ export class TileLayer extends Layer {
       }
       this.tiles[z] = tiles;
     }
+    this.queue = queue((url, callback) => {
+      if (this.images[url]) {
+        return callback();
+      }
+      const image = new Image();
+      image.crossOrigin = options.crossOrigin!;
+      image.src = url;
+      image.addEventListener("load", () => {
+        this.images[url] = image;
+        this.map.draw();
+        callback();
+      });
+    });
     for (const tiles of this.tiles[minZoom]) {
       for (const url of tiles) {
-        const image = new Image();
-        image.crossOrigin = "anonymous";
-        image.src = url;
-        image.addEventListener("load", () => {
-          this.images[url] = image;
-          this.map.draw();
-        });
+        this.fetch(url);
       }
     }
+  }
+
+  fetch(url: string) {
+    this.queue.push(url);
   }
 
   draw() {
@@ -93,12 +107,7 @@ export class TileLayer extends Layer {
             imageSize
           );
         } else {
-          const image = new Image();
-          image.crossOrigin = "anonymous";
-          image.src = url;
-          image.addEventListener("load", () => {
-            this.images[url] = image;
-          });
+          this.fetch(url);
         }
       }
     }

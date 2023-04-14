@@ -15,13 +15,15 @@
   },
   "scripts": {
     "build": "esbuild example/index.ts --bundle --minify --outdir=dist",
-    "dev": "npm run build -- --watch --sourcemap --servedir=dist"
+    "dev": "bun run build --watch --sourcemap --servedir=dist"
   },
   "dependencies": {
     "@use-gesture/vanilla": "^10.2.24",
+    "async": "^3.2.4",
     "popmotion": "^11.0.5"
   },
   "devDependencies": {
+    "@types/async": "^3.2.18",
     "esbuild": "^0.17.5"
   }
 }
